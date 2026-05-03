@@ -1,0 +1,1862 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Team C · Mantenimiento Lelystad</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0d1117;
+  --s1:#161b22;
+  --s2:#21262d;
+  --s3:#30363d;
+  --border:#30363d;
+  --border2:#484f58;
+  --text:#e6edf3;
+  --muted:#7d8590;
+  --dim:#484f58;
+  --fp:#f78166;
+  --fp-bg:rgba(247,129,102,0.13);
+  --goh:#79c0ff;
+  --goh-bg:rgba(121,192,255,0.13);
+  --flex:#56d364;
+  --flex-bg:rgba(86,211,100,0.13);
+  --osr:#ffa657;
+  --osr-bg:rgba(255,166,87,0.13);
+  --tl:#bc8cff;
+  --tl-bg:rgba(188,140,255,0.13);
+  --sick:#f85149;
+  --sick-bg:rgba(248,81,73,0.10);
+  --avail:#56d364;
+  --busy:#e3b341;
+  --r:8px;
+  --r-sm:5px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;}
+
+/* TOPBAR */
+.topbar{background:var(--s1);border-bottom:1px solid var(--border);padding:0 16px;display:flex;align-items:center;justify-content:space-between;height:50px;position:sticky;top:0;z-index:50;}
+.brand{display:flex;align-items:center;gap:9px;}
+.brand-pulse{width:7px;height:7px;border-radius:50%;background:var(--flex);animation:pulse 2.5s infinite;}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(86,211,100,.4);}50%{opacity:.5;box-shadow:0 0 0 5px rgba(86,211,100,0);}}
+.brand-name{font-family:'Roboto Mono',monospace;font-size:12px;font-weight:500;}
+.brand-name span{color:var(--muted);font-weight:400;}
+.topbar-right{display:flex;align-items:center;gap:10px;}
+.clock{font-family:'Roboto Mono',monospace;font-size:11px;color:var(--muted);}
+.shift-sel{font-family:'Roboto Mono',monospace;font-size:11px;padding:3px 9px;border-radius:20px;border:1px solid var(--border2);color:var(--muted);background:var(--s2);cursor:pointer;outline:none;}
+
+/* NAV */
+.nav{background:var(--s1);border-bottom:1px solid var(--border);padding:0 16px;display:flex;}
+.nav-tab{padding:9px 16px;font-size:14px;font-weight:500;cursor:pointer;border:none;background:transparent;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;font-family:'Source Sans 3',sans-serif;}
+.nav-tab:hover{color:var(--text);}
+.nav-tab.active{color:var(--text);border-bottom-color:var(--flex);}
+
+.main{padding:16px;max-width:1120px;margin:0 auto;}
+.view{display:none;}
+.view.active{display:block;}
+
+/* ===================== TAREAS (main view) ===================== */
+
+/* Area columns layout */
+.area-cols{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+
+.area-col{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;}
+.area-col-head{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.area-col-title{font-family:'Roboto Mono',monospace;font-size:12px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;}
+.area-col-title.goh{color:var(--goh);}
+.area-col-title.fp{color:var(--fp);}
+.area-col-body{display:grid;grid-template-columns:180px 1fr;min-height:300px;}
+
+/* Techs panel */
+.techs-panel{border-right:1px solid var(--border);padding:8px;}
+.panel-label{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-family:'Roboto Mono',monospace;color:var(--muted);margin-bottom:6px;}
+.tech-row{display:flex;align-items:center;gap:5px;padding:3px 5px;border-radius:var(--r-sm);margin-bottom:1px;transition:background .1s;}
+.tech-row:hover{background:var(--s2);}
+.avail-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.dot-avail{background:var(--avail);box-shadow:0 0 4px rgba(86,211,100,.5);}
+.dot-busy{background:var(--busy);}
+.dot-off{background:var(--dim);}
+.tech-name-sm{font-size:12px;color:var(--text);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tech-zone-tag{font-size:9px;padding:1px 4px;border-radius:3px;font-family:'Roboto Mono',monospace;flex-shrink:0;}
+.tz-flex{background:var(--flex-bg);color:var(--flex);}
+.tz-goh{background:var(--goh-bg);color:var(--goh);}
+.tz-fp{background:var(--fp-bg);color:var(--fp);}
+.avail-count{font-family:'Roboto Mono',monospace;font-size:11px;padding:1px 8px;border-radius:20px;}
+.ac-avail{background:rgba(86,211,100,.12);color:var(--avail);}
+.ac-mix{background:rgba(227,179,65,.12);color:var(--busy);}
+
+/* Tasks panel */
+.tasks-panel{padding:10px 12px;overflow-y:auto;max-height:460px;}
+.task-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-sm);padding:11px 13px;margin-bottom:8px;cursor:pointer;transition:border-color .12s,transform .1s;}
+.task-card:hover{border-color:var(--border2);transform:translateY(-1px);}
+.task-woid{font-family:'Roboto Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:3px;display:flex;align-items:center;gap:5px;}
+.task-title{font-size:15px;font-weight:600;color:var(--text);line-height:1.4;margin-bottom:7px;}
+.task-foot{display:flex;align-items:center;gap:4px;flex-wrap:wrap;}
+.tech-chip{font-size:11px;padding:2px 7px;border-radius:3px;background:var(--s2);color:var(--muted);}
+.status-tag{font-size:11px;padding:2px 7px;border-radius:3px;font-family:'Roboto Mono',monospace;}
+.st-prog{background:rgba(227,179,65,.12);color:var(--busy);}
+.st-pend{background:var(--s2);color:var(--muted);}
+.st-done{background:rgba(86,211,100,.12);color:var(--avail);}
+.st-mon{background:rgba(121,192,255,.12);color:var(--goh);}
+.st-report{background:var(--osr-bg);color:var(--osr);}
+.st-reminder{background:var(--tl-bg);color:var(--tl);}
+.st-handover{background:var(--sick-bg);color:var(--sick);}
+.src-planner{background:rgba(121,192,255,.1);color:#58a6ff;font-size:10px;padding:1px 5px;border-radius:3px;font-family:'Roboto Mono',monospace;}
+.task-note-i{font-size:11px;color:var(--muted);margin-top:5px;border-left:2px solid var(--border2);padding-left:6px;font-style:italic;}
+.empty-tasks{text-align:center;padding:30px 10px;color:var(--dim);font-size:12px;}
+
+/* All tasks section */
+.all-tasks-wrap{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;}
+.all-tasks-head{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+.all-tasks-title{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;font-family:'Roboto Mono',monospace;}
+.at-filters{display:flex;gap:5px;flex-wrap:wrap;}
+.at-btn{padding:3px 10px;font-size:11px;border:1px solid var(--border);border-radius:20px;background:transparent;color:var(--muted);cursor:pointer;font-family:'Roboto Mono',monospace;transition:all .12s;}
+.at-btn:hover{border-color:var(--border2);color:var(--text);}
+.at-btn.on{border-color:var(--flex);color:var(--flex);}
+.at-search{padding:5px 14px;border-bottom:1px solid var(--border);}
+.at-search input{width:100%;background:transparent;border:none;color:var(--text);font-size:14px;font-family:'Source Sans 3',sans-serif;outline:none;}
+.at-search input::placeholder{color:var(--dim);}
+.at-list{padding:8px;}
+.at-row{display:flex;align-items:center;gap:10px;padding:7px 8px;border-radius:var(--r-sm);cursor:pointer;transition:background .1s;border-bottom:1px solid var(--border);}
+.at-row:last-child{border-bottom:none;}
+.at-row:hover{background:var(--s2);}
+.at-woid{font-family:'Roboto Mono',monospace;font-size:11px;color:var(--muted);min-width:80px;}
+.at-title{font-size:14px;flex:1;}
+.at-techs{display:flex;gap:3px;flex-wrap:wrap;}
+.at-status{min-width:90px;text-align:right;}
+
+/* ===================== SHIFT START ===================== */
+.ss-layout{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px;}
+.ss-col{display:flex;flex-direction:column;gap:10px;}
+.ss-zone{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:12px;}
+.ss-zone-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;}
+.ss-zone-label{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-family:'Roboto Mono',monospace;}
+.ss-zone-count{font-family:'Roboto Mono',monospace;font-size:11px;padding:1px 7px;border-radius:20px;background:var(--s2);color:var(--muted);}
+.ss-tech-list{display:flex;flex-direction:column;gap:4px;}
+.ss-tech{font-size:13px;display:flex;align-items:center;gap:6px;}
+.ss-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
+
+.ss-totals{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
+.ss-chip{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:var(--r-sm);background:var(--s1);border:1px solid var(--border);font-size:13px;font-family:'Roboto Mono',monospace;}
+.ss-chip-num{font-size:18px;font-weight:500;}
+
+/* Checklist */
+.checklist-card{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:14px;}
+.checklist-label{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-family:'Roboto Mono',monospace;color:var(--muted);margin-bottom:10px;}
+.check-item{display:flex;align-items:center;gap:9px;padding:5px 7px;border-radius:var(--r-sm);cursor:pointer;transition:background .1s;margin-bottom:4px;}
+.check-item:hover{background:var(--s2);}
+.check-item input{width:14px;height:14px;accent-color:var(--flex);cursor:pointer;flex-shrink:0;}
+.check-item label{font-size:14px;cursor:pointer;}
+.check-item.done label{color:var(--muted);text-decoration:line-through;}
+
+/* ===================== PLANNING ===================== */
+.mp-controls{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center;}
+.s-box input{width:100%;background:var(--s1);border:1px solid var(--border);border-radius:var(--r-sm);padding:6px 12px;font-size:14px;color:var(--text);font-family:'Source Sans 3',sans-serif;outline:none;}
+.s-box input:focus{border-color:var(--border2);}
+.s-box input::placeholder{color:var(--muted);}
+.s-box{flex:1;min-width:160px;}
+.f-grp{display:flex;gap:4px;flex-wrap:wrap;}
+.fb{padding:3px 10px;font-size:11px;border:1px solid var(--border);border-radius:20px;background:transparent;color:var(--muted);cursor:pointer;font-family:'Roboto Mono',monospace;transition:all .12s;}
+.fb:hover{border-color:var(--border2);color:var(--text);}
+.fb.on.fp{border-color:var(--fp);color:var(--fp);background:var(--fp-bg);}
+.fb.on.goh{border-color:var(--goh);color:var(--goh);background:var(--goh-bg);}
+.fb.on.flex{border-color:var(--flex);color:var(--flex);background:var(--flex-bg);}
+.fb.on.osr{border-color:var(--osr);color:var(--osr);background:var(--osr-bg);}
+.fb.on.tl{border-color:var(--tl);color:var(--tl);background:var(--tl-bg);}
+.fb.on.sick{border-color:var(--sick);color:var(--sick);background:var(--sick-bg);}
+.mp-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--r);background:var(--s1);}
+.mp-table{width:100%;border-collapse:collapse;font-size:14px;}
+.mp-table th{padding:8px 12px;text-align:left;font-family:'Roboto Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.07em;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap;}
+.mp-table td{padding:7px 12px;border-bottom:1px solid var(--border);white-space:nowrap;}
+.mp-table tr:last-child td{border-bottom:none;}
+.mp-table tr:hover td{background:var(--s2);}
+.mp-section-title{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-family:'Roboto Mono',monospace;color:var(--muted);margin-bottom:8px;padding-left:2px;}
+.hoy-pill{font-size:11px;padding:2px 8px;border-radius:4px;font-family:'Roboto Mono',monospace;}
+.hoy-present{background:var(--flex-bg);color:var(--flex);}
+.hoy-absent{background:var(--sick-bg);color:var(--sick);}
+.hoy-hol{background:var(--s2);color:var(--muted);}
+.alert-box{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:var(--r-sm);padding:10px 14px;margin-bottom:8px;font-size:12px;display:flex;align-items:flex-start;gap:8px;color:var(--osr);}
+.extras-zone-sel{background:var(--s2);border:1px solid var(--border);border-radius:4px;padding:3px 7px;font-size:12px;color:var(--text);outline:none;cursor:pointer;font-family:'Source Sans 3',sans-serif;}
+.mp-name{font-weight:500;}
+.pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-family:'Roboto Mono',monospace;font-weight:500;}
+.p-fp{background:var(--fp-bg);color:var(--fp);}
+.p-goh{background:var(--goh-bg);color:var(--goh);}
+.p-flex{background:var(--flex-bg);color:var(--flex);}
+.p-osr{background:var(--osr-bg);color:var(--osr);}
+.p-tl{background:var(--tl-bg);color:var(--tl);}
+.p-sick{background:var(--sick-bg);color:var(--sick);}
+.p-flow{background:rgba(255,123,114,.12);color:#ff7b72;}
+.p-sp{background:var(--osr-bg);color:var(--osr);}
+.p-sgoh{background:rgba(121,192,255,.08);color:#58a6ff;}
+.p-sfp{background:rgba(247,129,102,.08);color:#ffa198;}
+.p-h{background:var(--s2);color:var(--muted);}
+.p-def{background:var(--s2);color:var(--muted);}
+
+/* MODAL EDIT FIELDS */
+.m-lbl2{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-family:'Roboto Mono',monospace;margin-bottom:5px;}
+.m-edit-field{display:flex;flex-direction:column;}
+.m-input{width:100%;background:var(--s2);border:1px solid var(--border);border-radius:var(--r-sm);padding:8px 10px;font-size:13px;color:var(--text);font-family:'Source Sans 3',sans-serif;outline:none;resize:none;line-height:1.5;}
+.m-input:focus{border-color:var(--border2);}
+.m-select{width:100%;background:var(--s2);border:1px solid var(--border);border-radius:var(--r-sm);padding:7px 10px;font-size:13px;color:var(--text);font-family:'Source Sans 3',sans-serif;outline:none;cursor:pointer;}
+.m-select:focus{border-color:var(--border2);}
+.status-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px;}
+.status-opt{padding:7px 10px;border-radius:var(--r-sm);border:1px solid var(--border);background:transparent;font-size:12px;cursor:pointer;font-family:'Source Sans 3',sans-serif;color:var(--muted);text-align:center;transition:all .12s;}
+.status-opt:hover{border-color:var(--border2);color:var(--text);}
+.status-opt.sel-pending{border-color:var(--muted);color:var(--text);background:var(--s2);}
+.status-opt.sel-inprogress{border-color:var(--prog);color:var(--prog);background:rgba(227,179,65,.1);}
+.status-opt.sel-monitoring{border-color:var(--mon);color:var(--mon);background:rgba(121,192,255,.1);}
+.status-opt.sel-done{border-color:var(--done);color:var(--done);background:rgba(86,211,100,.1);}
+.status-opt.sel-reportnext{border-color:var(--osr);color:var(--osr);background:var(--osr-bg);}
+.status-opt.sel-reminder{border-color:var(--tl);color:var(--tl);background:var(--tl-bg);}
+.status-opt.sel-handover{border-color:var(--sick);color:var(--sick);background:var(--sick-bg);}
+.modal-val{display:flex;flex-wrap:wrap;gap:4px;}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;z-index:200;padding:16px;backdrop-filter:blur(4px);}
+.overlay.hidden{display:none !important;}
+.modal{background:var(--s1);border:1px solid var(--border2);border-radius:12px;padding:22px;max-width:480px;width:100%;position:relative;animation:fi .15s ease;max-height:90vh;overflow-y:auto;}
+.modal-wide{max-width:820px;}
+.modal-cols{display:grid;grid-template-columns:1fr 280px;gap:20px;}
+.modal-left{min-width:0;}
+.modal-right{border-left:1px solid var(--border);padding-left:16px;display:flex;flex-direction:column;}
+.modal-right .assign-title{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-family:'Roboto Mono',monospace;color:var(--muted);margin-bottom:8px;}
+.modal-right .assign-list{flex:1;overflow-y:auto;max-height:420px;display:flex;flex-direction:column;gap:4px;}
+@media(max-width:700px){.modal-cols{grid-template-columns:1fr;}.modal-right{border-left:none;border-top:1px solid var(--border);padding-left:0;padding-top:14px;}}
+@keyframes fi{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+.modal-x{position:absolute;top:11px;right:11px;background:var(--s2);border:none;color:var(--muted);width:25px;height:25px;border-radius:50%;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;}
+.modal-x:hover{color:var(--text);}
+.m-woid{font-family:'Roboto Mono',monospace;font-size:11px;color:var(--muted);margin-bottom:4px;}
+.m-title{font-size:15px;font-weight:600;margin-bottom:14px;line-height:1.3;}
+.m-row{display:flex;align-items:flex-start;gap:9px;margin-bottom:9px;}
+.m-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;min-width:70px;padding-top:2px;font-family:'Roboto Mono',monospace;}
+.m-val{font-size:14px;flex:1;display:flex;flex-wrap:wrap;gap:4px;}
+.m-note{font-size:12px;color:var(--muted);font-style:italic;border-left:2px solid var(--border2);padding-left:7px;margin-top:8px;line-height:1.55;}
+.m-actions{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;}
+.btn{padding:6px 15px;border-radius:var(--r-sm);font-size:14px;cursor:pointer;border:1px solid var(--border2);background:var(--s2);color:var(--text);font-family:'Source Sans 3',sans-serif;transition:all .12s;}
+.btn:hover{border-color:var(--flex);color:var(--flex);}
+.btn-p{background:var(--flex);border-color:var(--flex);color:#0d1117;font-weight:600;}
+.btn-p:hover{background:#3dba4e;color:#0d1117;border-color:#3dba4e;}
+
+.new-task-btn{padding:4px 10px;font-size:11px;border-radius:var(--r-sm);border:1px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;font-family:'Source Sans 3',sans-serif;transition:all .12s;white-space:nowrap;}
+.new-task-btn:hover{border-color:var(--flex);color:var(--flex);}
+
+/* NEW TASK SHEET */
+.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(2px);}
+.sheet-bg.hidden{display:none;}
+.sheet{background:var(--s1);border:1px solid var(--border2);border-radius:14px 14px 0 0;width:100%;max-width:560px;padding:20px;animation:slideUp .2s ease;}
+@keyframes slideUp{from{transform:translateY(40px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+.sheet-handle{width:36px;height:4px;border-radius:2px;background:var(--border2);margin:0 auto 16px;}
+.sheet-title{font-size:15px;font-weight:600;margin-bottom:14px;}
+.sheet-field{margin-bottom:12px;}
+.sheet-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-family:'Roboto Mono',monospace;margin-bottom:5px;}
+.sheet-input{width:100%;background:var(--s2);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 12px;font-size:15px;color:var(--text);font-family:'Source Sans 3',sans-serif;outline:none;resize:none;}
+.sheet-input:focus{border-color:var(--border2);}
+.sheet-input::placeholder{color:var(--dim);}
+.sheet-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+.prio-btns{display:flex;gap:6px;}
+.prio-btn{flex:1;padding:8px 4px;border-radius:var(--r-sm);border:1px solid var(--border);background:transparent;font-size:12px;cursor:pointer;font-family:'Source Sans 3',sans-serif;color:var(--muted);transition:all .12s;text-align:center;}
+.prio-btn.sel-alta{border-color:var(--sick);color:var(--sick);background:var(--sick-bg);}
+.prio-btn.sel-media{border-color:var(--osr);color:var(--osr);background:var(--osr-bg);}
+.prio-btn.sel-baja{border-color:var(--flex);color:var(--flex);background:var(--flex-bg);}
+.zone-btns{display:flex;gap:6px;flex-wrap:wrap;}
+.zone-btn{padding:6px 14px;border-radius:var(--r-sm);border:1px solid var(--border);background:transparent;font-size:12px;cursor:pointer;font-family:'Roboto Mono',monospace;color:var(--muted);transition:all .12s;}
+.zone-btn.sel-goh{border-color:var(--goh);color:var(--goh);background:var(--goh-bg);}
+.zone-btn.sel-fp{border-color:var(--fp);color:var(--fp);background:var(--fp-bg);}
+.zone-btn.sel-flex{border-color:var(--flex);color:var(--flex);background:var(--flex-bg);}
+.sheet-actions{display:flex;gap:8px;margin-top:4px;}
+.sheet-save{flex:1;padding:11px;border-radius:var(--r-sm);border:none;background:var(--flex);color:#0d1117;font-size:15px;font-weight:600;cursor:pointer;font-family:'Source Sans 3',sans-serif;}
+.sheet-save:active{background:#3dba4e;}
+.sheet-cancel{padding:11px 18px;border-radius:var(--r-sm);border:1px solid var(--border2);background:transparent;color:var(--muted);font-size:14px;cursor:pointer;font-family:'Source Sans 3',sans-serif;}
+
+/* ASSIGN PANEL inside modal */
+.assign-panel{margin-top:12px;border-top:1px solid var(--border);padding-top:12px;}
+.assign-title{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-family:'Roboto Mono',monospace;margin-bottom:8px;}
+.assign-list{display:flex;flex-direction:column;gap:4px;max-height:200px;overflow-y:auto;}
+.assign-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all .12s;}
+.assign-row:hover{border-color:var(--border2);}
+.assign-row.assigned{border-color:var(--flex);background:rgba(86,211,100,.06);}
+.assign-row.busy-row{opacity:.5;}
+.assign-name{font-size:13px;flex:1;}
+.assign-status{font-size:10px;font-family:'Roboto Mono',monospace;padding:1px 6px;border-radius:3px;}
+.as-avail{background:rgba(86,211,100,.12);color:var(--flex);}
+.as-busy{background:rgba(227,179,65,.12);color:var(--busy);}
+.as-assigned{background:rgba(86,211,100,.2);color:var(--flex);}
+.assign-zone-tag{font-size:9px;padding:1px 5px;border-radius:3px;font-family:'Roboto Mono',monospace;}
+
+/* PASTE PANEL */
+.paste-card{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;margin-bottom:14px;}
+.paste-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
+.paste-title{font-size:14px;font-weight:600;margin-bottom:2px;}
+.paste-sub{font-size:12px;color:var(--muted);}
+.paste-toggle{padding:6px 14px;border-radius:var(--r-sm);border:1px solid var(--flex);background:transparent;color:var(--flex);font-size:13px;cursor:pointer;white-space:nowrap;font-family:'Source Sans 3',sans-serif;flex-shrink:0;}
+.paste-toggle:hover{background:var(--flex-bg);}
+.paste-body{margin-top:12px;}
+.paste-area{width:100%;background:var(--s2);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 12px;font-size:13px;color:var(--text);font-family:'Source Sans 3',sans-serif;outline:none;resize:vertical;min-height:90px;line-height:1.5;}
+.paste-area:focus{border-color:var(--border2);}
+.paste-result{margin-top:12px;}
+.parse-section{margin-bottom:10px;}
+.parse-section-title{font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;font-family:'Roboto Mono',monospace;margin-bottom:6px;color:var(--muted);}
+.parse-chips{display:flex;flex-wrap:wrap;gap:5px;}
+.parse-chip{font-size:12px;padding:3px 10px;border-radius:20px;display:flex;align-items:center;gap:5px;}
+.pc-found{background:var(--flex-bg);color:var(--flex);border:1px solid rgba(86,211,100,.3);}
+.pc-extra{background:var(--osr-bg);color:var(--osr);border:1px solid rgba(255,166,87,.3);}
+.pc-missing{background:var(--sick-bg);color:var(--sick);border:1px solid rgba(248,81,73,.2);}
+.pc-dot{width:6px;height:6px;border-radius:50%;background:currentColor;border-radius:50%;}
+.parse-apply-btn{margin-top:10px;padding:8px 20px;border-radius:var(--r-sm);border:none;background:var(--flex);color:#0d1117;font-size:13px;font-weight:600;cursor:pointer;font-family:'Source Sans 3',sans-serif;}
+/* SS TABLE */
+.ss-table{width:100%;border-collapse:collapse;font-size:13px;background:var(--s1);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;}
+.ss-table th{padding:8px 14px;text-align:left;font-family:'Roboto Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.07em;color:var(--muted);background:var(--s2);border-bottom:1px solid var(--border);text-transform:uppercase;}
+.ss-tr td{border-bottom:1px solid var(--border);}
+.ss-tr:last-child td{border-bottom:none;}
+.ss-tr:hover td{background:var(--s2);}
+.ss-zone-cell{padding:8px 14px;font-family:'Roboto Mono',monospace;font-size:11px;font-weight:600;white-space:nowrap;vertical-align:top;padding-top:10px;background:var(--s1);}
+.ss-name-cell{padding:8px 14px;font-size:13px;color:var(--text);}
+.mp-table td.editable{cursor:pointer;position:relative;}
+.mp-table td.editable:hover .pill{outline:1px solid var(--border2);}
+.cell-edit{position:absolute;top:100%;left:0;z-index:40;background:var(--s1);border:1px solid var(--flex);border-radius:var(--r-sm);padding:4px;display:flex;flex-direction:column;gap:2px;min-width:110px;box-shadow:0 4px 20px rgba(0,0,0,.5);}
+.cell-opt{font-size:11px;padding:5px 10px;border-radius:3px;cursor:pointer;font-family:'Roboto Mono',monospace;white-space:nowrap;color:var(--text);}
+.cell-opt:hover{background:var(--s2);}
+.today-badge{font-size:10px;padding:1px 6px;border-radius:3px;background:var(--flex-bg);color:var(--flex);font-family:'Roboto Mono',monospace;}
+.today-absent{font-size:10px;padding:1px 6px;border-radius:3px;background:var(--sick-bg);color:var(--sick);font-family:'Roboto Mono',monospace;}
+.today-extra{font-size:10px;padding:1px 6px;border-radius:3px;background:var(--osr-bg);color:var(--osr);font-family:'Roboto Mono',monospace;}
+.name-edit-wrap{display:flex;align-items:center;gap:6px;}
+@media(max-width:640px){
+  .area-cols{grid-template-columns:1fr;}
+  .area-col-body{grid-template-columns:1fr;}
+  .techs-panel{border-right:none;border-bottom:1px solid var(--border);}
+  .ss-layout{grid-template-columns:1fr;}
+  .main{padding:10px;}
+  .sheet{border-radius:14px 14px 0 0;}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-pulse"></div>
+    <div class="brand-name">TEAM C <span>· Lelystad</span></div>
+  </div>
+  <div class="topbar-right">
+    <select class="shift-sel">
+      <option>Shift 1 · Morning 06–14</option>
+      <option>Shift 2 · Afternoon 14–22</option>
+      <option>Shift 3 · Night 22–06</option>
+    </select>
+    <div class="clock" id="clock"></div>
+  </div>
+</div>
+<div id="loading-bar" style="display:none;background:#1c6b35;color:#d5f0da;font-family:'Roboto Mono',monospace;font-size:11px;padding:5px 16px;align-items:center;gap:8px;">
+  <div style="width:8px;height:8px;border-radius:50%;background:#56d364;animation:pulse 1s infinite;flex-shrink:0;"></div>
+  <span id="loading-msg">Cargando...</span>
+</div>
+
+<div class="nav">
+  <button class="nav-tab active" onclick="goTab('tasks',this)">Tareas</button>
+  <button class="nav-tab" onclick="goTab('ss',this)">Shift Start</button>
+  <button class="nav-tab" onclick="goTab('mp',this)">Planning</button>
+</div>
+
+<div class="main">
+
+<!-- ======== TAREAS ======== -->
+<div class="view active" id="view-tasks">
+
+  <div class="area-cols">
+
+    <!-- GOH COLUMN -->
+    <div class="area-col">
+      <div class="area-col-head">
+        <span class="area-col-title goh">GOH — Hanging Garments</span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="avail-count" id="goh-avail-cnt"></span>
+          <button class="new-task-btn" onclick="openNewTask('GOH')">+ Tarea</button>
+        </div>
+      </div>
+      <div class="area-col-body">
+        <div class="techs-panel">
+          <div class="panel-label">Técnicos</div>
+          <div id="goh-techs"></div>
+        </div>
+        <div class="tasks-panel" id="goh-tasks"></div>
+      </div>
+    </div>
+
+    <!-- FP COLUMN -->
+    <div class="area-col">
+      <div class="area-col-head">
+        <span class="area-col-title fp">FP — FlatPack</span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="avail-count" id="fp-avail-cnt"></span>
+          <button class="new-task-btn" onclick="openNewTask('FP')">+ Tarea</button>
+        </div>
+      </div>
+      <div class="area-col-body">
+        <div class="techs-panel">
+          <div class="panel-label">Técnicos</div>
+          <div id="fp-techs"></div>
+        </div>
+        <div class="tasks-panel" id="fp-tasks"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ALL TASKS -->
+  <div class="all-tasks-wrap">
+    <div class="all-tasks-head">
+      <span class="all-tasks-title">Todas las tareas del turno</span>
+      <div class="at-filters">
+        <button class="at-btn on" onclick="setAF('all',this)">Todas</button>
+        <button class="at-btn" onclick="setAF('Done',this)">Done</button>
+        <button class="at-btn" onclick="setAF('In Progress',this)">In Progress</button>
+        <button class="at-btn" onclick="setAF('Monitoring',this)">Monitoring</button>
+        <button class="at-btn" onclick="setAF('pending',this)">Pending</button>
+        <button class="at-btn" onclick="setAF('Report Next Shift',this)">Report Next Shift</button>
+        <button class="at-btn" onclick="setAF('Reminder',this)">Reminder</button>
+        <button class="at-btn" onclick="setAF('Shift Handover',this)">Shift Handover</button>
+        <button class="at-btn" onclick="setAF('PLANNER',this)">PLANNER</button>
+      </div>
+    </div>
+    <div class="at-search"><input type="text" id="at-search" placeholder="Buscar WO, tarea o técnico..." oninput="renderAllTasks()"></div>
+    <div class="at-list" id="at-list"></div>
+  </div>
+
+</div>
+
+<!-- ======== SHIFT START ======== -->
+<div class="view" id="view-ss">
+  <div class="ss-totals" id="ss-totals"></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:14px;">
+    <div>
+      <div id="ss-table-wrap"></div>
+    </div>
+    <div class="checklist-card">
+      <div class="checklist-label">Starting shift checklist</div>
+      <div id="checklist"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ======== PLANNING ======== -->
+<div class="view" id="view-mp">
+
+  <!-- PASTE PANEL -->
+  <div class="paste-card" id="paste-card">
+    <div class="paste-header">
+      <div>
+        <div class="paste-title">Importar turno</div>
+        <div class="paste-sub" id="paste-sub-msg">Pega el texto de Aturnos para actualizar la tabla del día</div>
+      </div>
+      <button class="paste-toggle" onclick="togglePaste()">Cargar XLS</button>
+    </div>
+    <div class="paste-body hidden" id="paste-body">
+      <div style="display:flex;gap:8px;margin-bottom:10px;align-items:center;">
+        <span style="font-size:12px;color:var(--muted);font-family:'Roboto Mono',monospace;text-transform:uppercase;letter-spacing:.05em;">Mi turno:</span>
+        <div style="display:flex;gap:5px;">
+          <button class="zone-btn sel-fp" id="shift-btn-M" onclick="selectPasteShift('M',this)" style="font-family:'Roboto Mono',monospace;font-size:11px;">Morning</button>
+          <button class="zone-btn" id="shift-btn-A" onclick="selectPasteShift('A',this)" style="font-family:'Roboto Mono',monospace;font-size:11px;">Afternoon</button>
+          <button class="zone-btn" id="shift-btn-N" onclick="selectPasteShift('N',this)" style="font-family:'Roboto Mono',monospace;font-size:11px;">Night</button>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <label style="display:flex;flex-direction:column;gap:6px;">
+          <span style="font-size:12px;color:var(--muted);">Sube el XLS exportado de Aturnos:</span>
+          <input type="file" id="xls-input" accept=".xls,.xlsx" style="font-size:13px;color:var(--text);background:var(--s2);border:1px solid var(--border);border-radius:var(--r-sm);padding:8px;">
+        </label>
+        <div style="display:flex;gap:8px;">
+          <button class="sheet-save" style="flex:1;padding:9px;font-size:14px;" onclick="parseXLS()">Analizar</button>
+          <button class="sheet-cancel" onclick="togglePaste()">Cancelar</button>
+        </div>
+      </div>
+    </div>
+    <div class="paste-result hidden" id="paste-result"></div>
+  </div>
+
+  <!-- ALERTS -->
+  <div id="mp-alerts" style="margin-bottom:12px;"></div>
+
+  <!-- SEARCH -->
+  <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+    <div class="s-box" style="flex:1;"><input type="text" id="mp-search" placeholder="Buscar técnico..." oninput="renderMP()"></div>
+  </div>
+
+  <!-- SECTION 1: STAFF FIJO -->
+  <div class="mp-section-title">Staff fijo</div>
+  <div class="mp-wrap" style="margin-bottom:16px;">
+    <table class="mp-table" id="mp-table-fixed">
+      <thead><tr id="mp-thead-row">
+        <th style="min-width:160px;">Técnico</th>
+        <th id="th-0" style="min-width:70px;">—</th>
+        <th id="th-1" style="min-width:70px;">—</th>
+        <th id="th-2" style="min-width:70px;">—</th>
+        <th id="th-3" style="min-width:70px;">—</th>
+        <th id="th-4" style="min-width:70px;">—</th>
+        <th id="th-5" style="min-width:70px;">—</th>
+        <th style="min-width:90px;">Zona</th>
+        <th style="min-width:80px;">Rol</th>
+        <th style="min-width:70px;">Hoy</th>
+      </tr></thead>
+      <tbody id="mp-tbody"></tbody>
+    </table>
+  </div>
+
+  <!-- SECTION 2: EXTRAS DEL TURNO -->
+  <div id="mp-extras-section" style="display:none;">
+    <div class="mp-section-title" style="color:var(--osr);">Extras del turno <span id="mp-extras-count" style="font-family:'Roboto Mono',monospace;font-size:11px;opacity:.7;"></span></div>
+    <div class="mp-wrap" style="margin-bottom:16px;">
+      <table class="mp-table">
+        <thead><tr>
+          <th style="min-width:200px;">Nombre completo</th>
+          <th style="min-width:90px;">Zona</th>
+          <th style="min-width:80px;">Horario</th>
+        </tr></thead>
+        <tbody id="mp-extras-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SECTION 3: 5/2 -->
+  <div id="mp-52-section" style="display:none;">
+    <div class="mp-section-title" style="color:var(--muted);">5/2 — Trabajadores en tu turno hoy <span style="font-family:'Roboto Mono',monospace;font-size:11px;opacity:.7;">(asigna zona para que aparezcan como disponibles)</span></div>
+    <div class="mp-wrap">
+      <table class="mp-table">
+        <thead><tr>
+          <th style="min-width:200px;">Nombre completo</th>
+          <th style="min-width:120px;">Zona (asignar si necesario)</th>
+          <th style="min-width:80px;">Horario</th>
+        </tr></thead>
+        <tbody id="mp-52-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+</div>
+
+<!-- NEW TASK SHEET -->
+<div class="sheet-bg hidden" id="sheet-bg" onclick="closeSheet(event)">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="sheet-title">Nueva tarea</div>
+    <div class="sheet-field">
+      <div class="sheet-label">Descripción</div>
+      <textarea class="sheet-input" id="new-desc" rows="2" placeholder="Ej: Cinta transportadora A3 — se para sola"></textarea>
+    </div>
+    <div class="sheet-field">
+      <div class="sheet-label">Observaciones adicionales</div>
+      <textarea class="sheet-input" id="new-note" rows="2" placeholder="Ej: Solo al arrancar, ruido en rodillo izq."></textarea>
+    </div>
+    <div class="sheet-row">
+      <div class="sheet-field" style="margin:0;">
+        <div class="sheet-label">Zona</div>
+        <div class="zone-btns" id="zone-btns">
+          <button class="zone-btn" onclick="selZone('GOH',this)">GOH</button>
+          <button class="zone-btn" onclick="selZone('FP',this)">FP</button>
+          <button class="zone-btn" onclick="selZone('FLEX',this)">FLEX</button>
+        </div>
+      </div>
+      <div class="sheet-field" style="margin:0;">
+        <div class="sheet-label">Prioridad</div>
+        <div class="prio-btns">
+          <button class="prio-btn" onclick="selPrio('alta',this)">Alta</button>
+          <button class="prio-btn" onclick="selPrio('media',this)">Media</button>
+          <button class="prio-btn" onclick="selPrio('baja',this)">Baja</button>
+        </div>
+      </div>
+    </div>
+    <div class="sheet-actions">
+      <button class="sheet-cancel" onclick="closeSheet()">Cancelar</button>
+      <button class="sheet-save" onclick="saveNewTask()">Crear tarea</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="overlay hidden" id="overlay" onclick="closeModal(event)">
+  <div class="modal modal-wide">
+    <button class="modal-x" onclick="closeModal()">✕</button>
+    <div class="m-woid" id="m-woid"></div>
+
+    <div class="modal-cols">
+      <!-- LEFT: form -->
+      <div class="modal-left">
+        <div class="m-edit-field" style="margin-bottom:12px;">
+          <div class="m-lbl2">Descripción</div>
+          <textarea class="m-input" id="m-edit-title" rows="2" oninput="markDirty()"></textarea>
+        </div>
+
+        <div class="m-edit-field" style="margin-bottom:12px;">
+          <div class="m-lbl2">Estado</div>
+          <div class="status-grid" id="m-status-grid"></div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+          <div class="m-edit-field">
+            <div class="m-lbl2">Zona</div>
+            <select class="m-select" id="m-edit-zona" onchange="markDirty()">
+              <option value="">—</option>
+              <option value="GOH">GOH</option>
+              <option value="FP">FP</option>
+              <option value="FLEX">FLEX</option>
+              <option value="OSR">OSR</option>
+            </select>
+          </div>
+          <div class="m-edit-field">
+            <div class="m-lbl2">Prioridad</div>
+            <select class="m-select" id="m-edit-prio" onchange="markDirty()">
+              <option value="baja">Baja</option>
+              <option value="media">Media</option>
+              <option value="alta">Alta</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="m-edit-field" style="margin-bottom:12px;">
+          <div class="m-lbl2">Notas / Observaciones</div>
+          <textarea class="m-input" id="m-edit-note" rows="2" placeholder="Observaciones adicionales..." oninput="markDirty()"></textarea>
+        </div>
+
+        <div class="m-edit-field" style="margin-bottom:10px;">
+          <div class="m-lbl2">Técnicos asignados</div>
+          <div class="modal-val techs" id="m-techs"></div>
+        </div>
+
+        <div class="m-actions">
+          <button class="btn btn-p" id="btn-save-task" onclick="saveTaskEdits()" style="display:none;">Guardar cambios</button>
+          <button class="btn btn-danger" onclick="deleteTask()" style="border-color:var(--sick);color:var(--sick);">Eliminar</button>
+          <button class="btn" onclick="closeModal()">Cerrar</button>
+        </div>
+      </div>
+
+      <!-- RIGHT: always-open assign panel -->
+      <div class="modal-right">
+        <div class="assign-title">Técnicos</div>
+        <div class="assign-list" id="assign-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+// ========== DATA ==========
+
+// Technicians with their primary zone
+const TECHS = [
+  {name:'Eduardo Sienes', zone:'GOH', sub:'GOH'},
+  {name:'Juan Suárez',    zone:'GOH', sub:'GOH'},
+  {name:'Alejandro G.',   zone:'GOH', sub:'GOH'},
+  {name:'Borja S.',       zone:'FP',  sub:'FP'},
+  {name:'Paula S.',       zone:'FP',  sub:'FP'},
+  {name:'Sergio Cuco',    zone:'FP',  sub:'FP'},
+  {name:'Raul R.',        zone:'FLEX',sub:'FLEX'},
+  {name:'Jorge A.',       zone:'FLEX',sub:'FLEX'},
+  {name:'Iago C.',        zone:'FLEX',sub:'FLEX'},
+  {name:'Adrian B.',      zone:'FLEX',sub:'FLEX'},
+  {name:'Marcos T.',      zone:'FLEX',sub:'FLEX'},
+  {name:'Sergio Benavides',zone:'FLEX',sub:'FLEX'},
+  {name:'Guillermo Garcia',zone:'FLEX',sub:'FLEX'},
+  {name:'Leonardo',       zone:'FP',  sub:'S FP'},
+  {name:'Manuela',        zone:'FP',  sub:'S FP'},
+  {name:'Borisz M.',      zone:'GOH', sub:'S GOH'},
+  {name:'Borja ruiz',     zone:'OSR', sub:'OSR'},
+];
+
+const TASKS = [
+  {id:0,  woid:'35401',     title:'Cambiar correa dentada',                         techs:['Guillermo Garcia','Adrian B.'], status:'Done',        source:'',             note:'',                  zones:['FLEX']},
+  {id:1,  woid:'861010',    title:'Revisión máquina 861010',                         techs:['Iago C.'],                     status:'Done',        source:'',             note:'',                  zones:['FLEX']},
+  {id:2,  woid:'523',       title:'Perdiendo aceite — subida silo 3 (C32M1)',        techs:['Adrian B.','Guillermo Garcia'],status:'Done',        source:'Previous Shift',note:'',                 zones:['FLEX']},
+  {id:3,  woid:'51000',     title:'Chekear perfil curva alta',                       techs:['Jorge A.'],                    status:'Done',        source:'',             note:'',                  zones:['FLEX']},
+  {id:4,  woid:'108',       title:'Caljan — revisión',                               techs:['Borja S.'],                    status:'Done',        source:'',             note:'',                  zones:['FP']},
+  {id:5,  woid:'SQB07',     title:'SQB 07 conveyor',                                 techs:['Paula S.'],                    status:'Done',        source:'',             note:'',                  zones:['FP']},
+  {id:6,  woid:'17000',     title:'Revisión máquina 17000',                          techs:['Iago C.'],                     status:'Done',        source:'',             note:'',                  zones:['FLEX']},
+  {id:7,  woid:'PPM-PLC27', title:'PPM — PLC27 506000 & 507000 & 522000',           techs:['Marcos T.','Sergio Benavides'],status:'In Progress', source:'PLANNER',      note:'WO 5525369',        zones:['FLEX']},
+  {id:8,  woid:'208',       title:'Chain 208 — reparación de puntos',                techs:['Raul R.'],                     status:'In Progress', source:'PLANNER',      note:'WO 5664291',        zones:['FLEX']},
+  {id:9,  woid:'37406',     title:'Cambiar correa dentada',                          techs:['Guillermo Garcia','Adrian B.'],status:'In Progress', source:'',             note:'',                  zones:['FLEX']},
+  {id:10, woid:'FP-W17',    title:'FP Weekly alarm evaluation W17',                  techs:['Jorge A.'],                    status:'In Progress', source:'',             note:'',                  zones:['FP']},
+  {id:11, woid:'DOCK106',   title:'Dock 106 — intervención',                         techs:['Borja S.'],                    status:'In Progress', source:'',             note:'',                  zones:['FP']},
+  {id:12, woid:'PPM-CPU-B', title:'PPM — CPU_B IDs MODULE 2 Monthly pop-ups',        techs:['Sergio Cuco'],                 status:'In Progress', source:'PLANNER',      note:'',                  zones:['FP']},
+  {id:13, woid:'297000',    title:'Motor 297000 — seguimiento aceite',               techs:[],                              status:'Monitoring',  source:'',             note:'',                  zones:['GOH']},
+  {id:14, woid:'SHUT206',   title:'Shuttle 206 y 209 — WO pendiente',               techs:[],                              status:'Monitoring',  source:'',             note:'',                  zones:['GOH']},
+  {id:15, woid:'PPM-PLC02', title:'PPM — PLC 02 Semester+Bimonthly+Annual',         techs:[],                              status:'pending',     source:'PLANNER',      note:'',                  zones:['FP','GOH','FLEX']},
+  {id:16, woid:'AISLE5',    title:'Aisle 5 OSR — plan de trabajo 6M',               techs:[],                              status:'pending',     source:'PLANNER',      note:'',                  zones:['GOH','FLEX']},
+  {id:17, woid:'800058',    title:'Transfer bearing dañado — WO 5547487',            techs:[],                              status:'pending',     source:'PLANNER',      note:'Abnormal',          zones:['FLEX']},
+  {id:18, woid:'21000',     title:'Revisión máquina 21000',                          techs:[],                              status:'pending',     source:'',             note:'',                  zones:[]},
+  {id:19, woid:'FP-CONV',   title:'FP conveyor — no se mueve, nuevo módulo',        techs:[],                              status:'pending',     source:'',             note:'',                  zones:['FP']},
+  {id:20, woid:'208000',    title:'Revisión máquina 208000',                         techs:[],                              status:'pending',     source:'',             note:'Report next shift', zones:[]},
+];
+
+const SS_ZONES = {
+  'GOH Silo': {color:'var(--goh)', techs:['Juan Suárez','Borisz M.']},
+  'GOH Area':  {color:'var(--goh)', techs:['Eduardo Sienes','Alejandro G.']},
+  'FLEX':      {color:'var(--flex)',techs:['Raul R.','Jorge A.','Iago C.','Adrian B.','Marcos T.','Sergio Benavides','Guillermo Garcia']},
+  'TL / SP / FLOW': {color:'var(--tl)', techs:['Sergio','Julio','Gonza','Sergio Santaella','Jose Manuel']},
+  'FP Silo':   {color:'var(--fp)',  techs:['Leonardo','Manuela']},
+  'FP Area':   {color:'var(--fp)',  techs:['Borja S.','Paula S.','Sergio Cuco']},
+  'OSR':       {color:'var(--osr)', techs:['Borja ruiz']},
+  'Holidays / Sick': {color:'var(--dim)', techs:['Sebastian','Chema','Angel A']},
+};
+
+const PLANNING = [
+  {name:'Sebastian',        days:['SICK','SICK','SICK','SICK','SICK','SICK'], zone:'—'},
+  {name:'Sergio',           days:['TL','TL','TL','TL','TL','TL'],            zone:'TL'},
+  {name:'Julio',            days:['TL','TL','TL','TL','TL','TL'],            zone:'TL'},
+  {name:'Gonza',            days:['TL','TL','TL','TL','TL','TL'],            zone:'TL'},
+  {name:'Raul R.',          days:['FLEX','FLEX','FLEX','FLEX','FLEX','FLEX'], zone:'FLEX'},
+  {name:'Jorge A.',         days:['FLEX','FLEX','H','FLEX','FLEX','FLEX'],    zone:'FLEX'},
+  {name:'Iago C.',          days:['FLEX','FLEX','FLEX','FLEX','FLEX','FLEX'], zone:'FLEX'},
+  {name:'Adrian B.',        days:['FLEX','FLEX','FLEX','FLEX','FLEX','FLEX'], zone:'FLEX'},
+  {name:'Marcos T.',        days:['FLEX','FLEX','FLEX','FLEX','FLEX','FLEX'], zone:'FLEX'},
+  {name:'Sergio Benavides', days:['FLEX','FLEX','FLEX','FLEX','FLEX','FLEX'], zone:'FLEX'},
+  {name:'Guillermo Garcia', days:['FLEX','FLEX','FLEX','FLEX','FLEX','FLEX'], zone:'FLEX'},
+  {name:'Sergio Santaella', days:['FLOW','FLOW','FLOW','FLOW','FLOW','FLOW'], zone:'FLOW'},
+  {name:'Eduardo Sienes',   days:['GOH','GOH','GOH','GOH','GOH','GOH'],      zone:'GOH'},
+  {name:'Juan Suárez',      days:['S GOH','GOH','GOH','GOH','GOH','GOH'],    zone:'GOH'},
+  {name:'Alejandro G.',     days:['GOH','GOH','GOH','GOH','GOH','GOH'],      zone:'GOH'},
+  {name:'Borja S.',         days:['FP','FP','FP','FP','FP','FP'],            zone:'FP'},
+  {name:'Paula S.',         days:['FP','FP','FP','FP','FP','FP'],            zone:'FP'},
+  {name:'Sergio Cuco',      days:['FP','FP','FP','FP','FP','FP'],            zone:'FP'},
+  {name:'Angel A',          days:['H','H','H','H','H','H'],                  zone:'SP'},
+  {name:'Borisz M.',        days:['S GOH','S GOH','S GOH','S GOH','S GOH','S GOH'], zone:'S GOH'},
+  {name:'Borja ruiz',       days:['OSR','OSR','S GOH','OSR','S GOH','S GOH'], zone:'OSR'},
+  {name:'Carlos R.C.',      days:['H','S FP','S FP','S FP','H','S FP'],      zone:'S FP'},
+  {name:'Chema',            days:['SICK','SICK','SICK','SICK','SICK','SICK'], zone:'—'},
+  {name:'Jose Manuel',      days:['SP','SP','SP','SP','SP','SP'],             zone:'SP'},
+  {name:'Leonardo',         days:['S FP','S FP','S FP','H','S FP','S FP'],   zone:'S FP'},
+  {name:'Manuela',          days:['S FP','S FP','—','—','—','—'],            zone:'S FP'},
+];
+
+const CHECKLIST_ITEMS = [
+  'Abrir WO',
+  'Chequear Aturnos',
+  'Asignar 5S Work Orders',
+  'Asignar PPM',
+  'Chequear Planner',
+  'Tareas pendientes turno anterior',
+];
+
+// ========== API ==========
+const SCRIPT_URL='https://script.google.com/macros/s/AKfycbyLq9PpNtahogpGglyFA0HksV_cLh40BgLwogrWNGxT2zzKMnR_VF7ciC8I67P9G935/exec';
+async function apiGet(action){const r=await fetch(`${SCRIPT_URL}?action=${action}`);return r.json();}
+async function apiPost(body){const r=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify(body)});return r.json();}
+
+function setLoading(msg){
+  const el=document.getElementById('loading-bar');
+  if(!el)return;
+  el.textContent=msg;
+  el.style.display=msg?'flex':'none';
+}
+
+function normalizeTask(t){
+  const techsRaw=t['técnicosAsignados']||t.tecnicosAsignados||'';
+  const techs=techsRaw?techsRaw.split(',').map(x=>x.trim()).filter(Boolean):[];
+  const estado=t.estado||'pending';
+  const zona=t.zona||'';
+  return {
+    id:t.id||'',
+    woid:t['woReferencia']||t.id||'',
+    title:t['descripción']||t.descripcion||'',
+    techs,
+    status:estado==='Pending'?'pending':estado,
+    source:t.origen||'',
+    note:t['notasObservaciones']||'',
+    zones:zona?[zona]:[],
+    prio:(t.prioridad||'media').toLowerCase(),
+    turno:t.turno||'',
+    cerradaPor:t.cerradaPor||'',
+  };
+}
+
+function normalizePlanning(p){
+  // Apps Script camelCases the headers, dates become e.g. "0205","0305" etc.
+  // Try multiple possible key formats
+  function d(keys){for(const k of keys){if(p[k]!==undefined)return p[k];}return'—';}
+  return {
+    name:p['técnico']||p.tecnico||p['Técnico']||'',
+    days:[
+      d(['0205','02/05','día1','dia1']),
+      d(['0305','03/05','día2','dia2']),
+      d(['0405','04/05','día3','dia3']),
+      d(['2504','25/04','día4','dia4']),
+      d(['2804','28/04','día5','dia5']),
+      d(['1804','18/04','día6','dia6']),
+    ],
+    zone:p['zonaPrincipal']||p.zonaPrincipal||p.zona||'—',
+  };
+}
+
+let atFilter='all';
+let mpFilters=new Set();
+let selectedTask=null;
+let newTaskZone='';
+let newTaskPrio='media';
+let nextId=100;
+const statusOrder=['pending','Monitoring','In Progress','Done'];
+
+// ========== HELPERS ==========
+function techBusy(name){
+  return TASKS.some(t=>t.techs.includes(name)&&t.status!=='Done');
+}
+function techStatus(name){
+  const activeTasks=TASKS.filter(t=>t.techs.includes(name)&&t.status!=='Done');
+  const hasActive=activeTasks.some(t=>t.status==='In Progress'||t.status==='Monitoring'||t.status==='Shift Handover');
+  // Only count as "busy" (amber) if there are active tasks, not just pending
+  return {count:activeTasks.length, active:hasActive, pendingOnly:activeTasks.length>0&&!hasActive};
+}
+function pillClass(s){
+  const m={FP:'p-fp',GOH:'p-goh',FLEX:'p-flex',OSR:'p-osr',TL:'p-tl',SICK:'p-sick',FLOW:'p-flow',
+    SP:'p-sp','S GOH':'p-sgoh','S FP':'p-sfp',H:'p-h','FLOW':'p-flow'};
+  return m[s]||'p-def';
+}
+function stTag(s){
+  const map={
+    'Done':           'st-done',
+    'In Progress':    'st-prog',
+    'Monitoring':     'st-mon',
+    'Report Next Shift':'st-report',
+    'Reminder':       'st-reminder',
+    'Shift Handover': 'st-handover',
+  };
+  const cls=map[s]||'st-pend';
+  const label=s==='pending'?'Pending':s;
+  return`<span class="status-tag ${cls}">${label}</span>`;
+}
+function prioTag(p){
+  if(!p||p==='media') return'';
+  if(p==='alta') return`<span class="status-tag" style="background:var(--sick-bg);color:var(--sick)">Alta</span>`;
+  return`<span class="status-tag" style="background:var(--flex-bg);color:var(--flex)">Baja</span>`;
+}
+
+// ========== NEW TASK — opens modal directly ==========
+function openNewTask(zone){
+  const localId='LOCAL-'+Date.now();
+  const localTask={
+    id:localId,
+    woid:'NEW',
+    title:'',
+    techs:[],       // always empty
+    status:'pending',
+    source:'',
+    note:'',
+    zones:zone?[zone]:[],
+    prio:'media',
+    isNew:true,
+    turno:'',
+  };
+  TASKS.push(localTask);
+  renderTasksView();
+  openModal(localId);
+}
+async function saveNewTask(){
+  const desc=document.getElementById('new-desc').value.trim();
+  if(!desc){document.getElementById('new-desc').focus();return;}
+  const note=document.getElementById('new-note').value.trim();
+
+  const now=new Date();
+  const pad=n=>String(n).padStart(2,'0');
+  const fecha=`${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+  const turno=document.querySelector('.shift-sel').value.split('·')[1]?.trim().split(' ')[0]||'Morning';
+  const localId='LOCAL-'+Date.now();
+
+  const localTask={
+    id:localId,
+    woid:'NEW',
+    title:desc,
+    techs:[],
+    status:'pending',
+    source:'',
+    note,
+    zones:newTaskZone?[newTaskZone]:[],
+    prio:newTaskPrio,
+    isNew:true,
+    turno,
+  };
+  TASKS.push(localTask);
+
+  // Close creation sheet and open edit modal immediately
+  document.getElementById('sheet-bg').classList.add('hidden');
+  renderTasksView();
+  openModal(localId);
+
+  // Save to sheet in background
+  try{
+    setLoading('Guardando tarea en sheet...');
+    const res=await apiPost({action:'createTarea',data:{
+      titulo:desc, nota, zona:newTaskZone, prioridad:newTaskPrio,
+      estado:'Pending', turno, fechaCreacion:fecha,
+    }});
+    if(res.ok){
+      localTask.id=res.id;
+      localTask.woid=res.id;
+      localTask.isNew=false;
+      // Update woid in modal if still open
+      const woidEl=document.getElementById('m-woid');
+      if(woidEl&&selectedTask===localTask) woidEl.textContent='#'+res.id;
+    }
+  }catch(e){console.warn('Sheet save failed:',e);}
+  finally{setLoading('');}
+}
+
+
+async function toggleAssign(name){
+  if(!selectedTask) return;
+  // Save current field values first
+  const titleVal=document.getElementById('m-edit-title').value.trim();
+  if(titleVal) selectedTask.title=titleVal;
+  selectedTask.note=document.getElementById('m-edit-note').value.trim();
+  const zonaVal=document.getElementById('m-edit-zona').value;
+  selectedTask.zones=zonaVal?[zonaVal]:[];
+  selectedTask.prio=document.getElementById('m-edit-prio').value;
+
+  const idx=selectedTask.techs.indexOf(name);
+  if(idx>=0) selectedTask.techs.splice(idx,1);
+  else selectedTask.techs.push(name);
+
+  refreshTechsDisplay();
+  refreshAssignList();
+  renderTasksView();
+  markDirty();
+
+  try{
+    if(!selectedTask.isNew)
+      await apiPost({action:'updateTarea',id:selectedTask.id,data:{techs:selectedTask.techs}});
+  }catch(e){console.warn('Assign save failed:',e);}
+}
+
+// ========== TABS ==========
+function goTab(name,el){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  el.classList.add('active');
+}
+
+// ========== CLOCK ==========
+function updateClock(){
+  const now=new Date();
+  const d=['dom','lun','mar','mié','jue','vie','sáb'];
+  const m=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  document.getElementById('clock').textContent=
+    `${d[now.getDay()]} ${now.getDate()} ${m[now.getMonth()]} · ${now.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}`;
+}
+updateClock();setInterval(updateClock,1000);
+
+// ========== INIT — load from Google Sheets ==========
+async function initApp(){
+  setLoading('Conectando con Google Sheets...');
+  try{
+    // Load tareas
+    const rawTareas = await apiGet('getTareas');
+    const validTareas = Array.isArray(rawTareas)
+      ? rawTareas.filter(t=>t.id&&!t.id.startsWith('ℹ'))
+      : [];
+    TASKS.length=0;
+    validTareas.forEach((t,i)=>{const n=normalizeTask(t);n._idx=i;TASKS.push(n);});
+
+    setLoading('Cargando planning...');
+    // Load planning
+    const rawPlanning = await apiGet('getPlanning');
+    if(Array.isArray(rawPlanning)&&rawPlanning.length>0){
+      PLANNING.length=0;
+      rawPlanning.filter(p=>p['técnico']||p.tecnico).forEach(p=>PLANNING.push(normalizePlanning(p)));
+    }
+  }catch(e){
+    console.warn('API load failed, using local data:',e);
+  }finally{
+    setLoading('');
+  }
+  renderTasksView();
+  renderSS();
+  renderMP();
+}
+
+initApp();
+function renderAreaTechs(areaZone, containerId, cntId){
+  // Main techs: zone + FLEX
+  const mainTechs = TECHS.filter(t =>
+    (t.zone===areaZone || t.zone==='FLEX') && t.sub!=='S GOH' && t.sub!=='S FP'
+  );
+  // PA techs: S GOH for GOH column, S FP for FP column
+  const paSub = areaZone==='GOH'?'S GOH':'S FP';
+  const paTechs = TECHS.filter(t=>t.sub===paSub);
+
+  const free = mainTechs.filter(t=>techStatus(t.name).count===0);
+  document.getElementById(cntId).innerHTML =
+    free.length>0
+      ?`<span class="avail-count ac-avail">${free.length} libres</span>`
+      :`<span class="avail-count ac-mix">0 libres</span>`;
+
+  function techRow(t){
+    const {count,active}=techStatus(t.name);
+    const zc=t.zone==='FLEX'?'tz-flex':areaZone==='GOH'?'tz-goh':'tz-fp';
+    // green = free, amber = pending tasks, red-dim = active task
+    let dotStyle,nameStyle;
+    if(count===0){
+      dotStyle='width:7px;height:7px;border-radius:50%;background:#56d364;box-shadow:0 0 4px rgba(86,211,100,.5);flex-shrink:0;';
+      nameStyle='';
+    } else if(active){
+      dotStyle='width:7px;height:7px;border-radius:50%;background:#1e5c2e;flex-shrink:0;';
+      nameStyle='color:var(--muted)';
+    } else {
+      // pending only — still green but with amber counter
+      dotStyle='width:7px;height:7px;border-radius:50%;background:#56d364;box-shadow:0 0 4px rgba(86,211,100,.5);flex-shrink:0;';
+      nameStyle='';
+    }
+    const counter=count>0?`<span style="font-family:'Roboto Mono',monospace;font-size:9px;padding:1px 5px;border-radius:10px;margin-left:2px;background:rgba(227,179,65,.2);color:var(--busy);">${count}</span>`:'';
+    return `<div class="tech-row">
+      <div style="${dotStyle}"></div>
+      <span class="tech-name-sm" style="${nameStyle}">${t.name}</span>
+      ${counter}
+      <span class="tech-zone-tag ${zc}">${t.sub}</span>
+    </div>`;
+  }
+
+  let html = mainTechs.map(techRow).join('');
+
+  if(paTechs.length){
+    html+=`<div style="margin-top:8px;padding-top:6px;border-top:1px solid var(--border);">
+      <div style="font-size:9px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-family:'Roboto Mono',monospace;color:var(--muted);margin-bottom:4px;">PA</div>
+      ${paTechs.map(techRow).join('')}
+    </div>`;
+  }
+
+  document.getElementById(containerId).innerHTML=html;
+}
+
+function renderAreaTasks(areaZone, containerId){
+  const tasks = TASKS.filter(t=>
+    (t.zones.includes(areaZone)||t.zones.includes('FLEX'))
+    && (t.status==='pending'||t.status==='In Progress'||t.status==='Monitoring')
+  );
+  if(!tasks.length){
+    document.getElementById(containerId).innerHTML='<div class="empty-tasks">Sin tareas activas</div>';
+    return;
+  }
+  document.getElementById(containerId).innerHTML = tasks.map(t=>{
+    const techs = t.techs.length ? t.techs.map(x=>`<span class="tech-chip">${x}</span>`).join('') : '<span style="font-size:10px;color:var(--dim)">Sin asignar</span>';
+    const src = t.source==='PLANNER'?`<span class="src-planner">PLANNER</span>`:'';
+    const note = t.note?`<div class="task-note-i">${t.note}</div>`:'';
+    return `<div class="task-card" style="position:relative;" onclick="openModal('${t.id}')">
+      <span onclick="event.stopPropagation();quickDelete('${t.id}')" style="position:absolute;top:6px;right:7px;font-size:11px;color:var(--dim);cursor:pointer;line-height:1;padding:2px 4px;" title="Eliminar">✕</span>
+      <div class="task-woid">#${t.woid} ${src}</div>
+      <div class="task-title">${t.title||'<em style="color:var(--muted)">Sin descripción</em>'}</div>
+      <div class="task-foot">${techs} ${stTag(t.status)}</div>
+      ${note}
+    </div>`;
+  }).join('');
+}
+
+function renderAllTasks(){
+  const q = document.getElementById('at-search').value.toLowerCase();
+  const tasks = TASKS.filter(t=>{
+    const mq = !q||(t.woid+t.title+t.techs.join(' ')).toLowerCase().includes(q);
+    const mf = atFilter==='all'||t.status===atFilter||(atFilter==='PLANNER'&&t.source==='PLANNER');
+    return mq&&mf;
+  });
+  document.getElementById('at-list').innerHTML = tasks.length
+    ? tasks.map(t=>{
+        const techs = t.techs.length ? t.techs.map(x=>`<span class="tech-chip">${x}</span>`).join('') : '<span style="font-size:10px;color:var(--dim)">—</span>';
+        const zones = t.zones.length ? t.zones.join(', ') : '—';
+        return `<div class="at-row" style="position:relative;" onclick="openModal('${t.id}')">
+          <div class="at-woid">#${t.woid}</div>
+          <div class="at-title">${t.title||'<em style="color:var(--muted)">Sin descripción</em>'} <span style="font-size:11px;color:var(--muted)">[${zones}]</span></div>
+          <div class="at-techs">${techs}</div>
+          <div class="at-status">${stTag(t.status)}</div>
+          <span onclick="event.stopPropagation();quickDelete('${t.id}')" style="margin-left:8px;font-size:12px;color:var(--dim);cursor:pointer;padding:2px 6px;flex-shrink:0;" title="Eliminar">✕</span>
+        </div>`;
+      }).join('')
+    : '<div style="padding:20px;text-align:center;color:var(--dim);font-size:12px;">Sin resultados</div>';
+}
+
+function setAF(f,el){
+  atFilter=f;
+  document.querySelectorAll('.at-btn').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+  renderAllTasks();
+}
+
+function renderTasksView(){
+  renderAreaTechs('GOH','goh-techs','goh-avail-cnt');
+  renderAreaTechs('FP','fp-techs','fp-avail-cnt');
+  renderAreaTasks('GOH','goh-tasks');
+  renderAreaTasks('FP','fp-tasks');
+  renderAllTasks();
+}
+
+// ========== SHIFT START ==========
+function quickDelete(id){
+  const t=TASKS.find(x=>String(x.id)===String(id));
+  if(!t)return;
+  if(!confirm(`¿Eliminar "${t.title||'tarea sin título'}"?`))return;
+  TASKS.splice(TASKS.indexOf(t),1);
+  renderTasksView();
+}
+
+function renderSS(){
+  const zones=[
+    {name:'TL / SP / FLOW', color:'var(--tl)',  techs:SS_ZONES['TL / SP / FLOW'].techs},
+    {name:'FLEX',           color:'var(--flex)', techs:SS_ZONES['FLEX'].techs},
+    {name:'FP Area',        color:'var(--fp)',   techs:SS_ZONES['FP Area'].techs},
+    {name:'GOH Area',       color:'var(--goh)',  techs:SS_ZONES['GOH Area'].techs},
+    {name:'GOH Silo',       color:'var(--goh)',  techs:SS_ZONES['GOH Silo'].techs},
+    {name:'FP Silo',        color:'var(--fp)',   techs:SS_ZONES['FP Silo'].techs},
+    {name:'OSR',            color:'var(--osr)',  techs:SS_ZONES['OSR'].techs},
+    {name:'Hols / Sick',    color:'var(--dim)',  techs:SS_ZONES['Holidays / Sick'].techs},
+  ];
+
+  const total=Object.values(SS_ZONES).reduce((a,z)=>a+z.techs.length,0);
+  const gohT=SS_ZONES['GOH Silo'].techs.length+SS_ZONES['GOH Area'].techs.length;
+  const fpT=SS_ZONES['FP Silo'].techs.length+SS_ZONES['FP Area'].techs.length;
+  const flexT=SS_ZONES['FLEX'].techs.length;
+
+  document.getElementById('ss-totals').innerHTML=`
+    <div class="ss-chip"><span class="ss-chip-num">${total}</span> en turno</div>
+    <div class="ss-chip" style="border-color:var(--goh)"><span class="ss-chip-num" style="color:var(--goh)">${gohT}</span> GOH</div>
+    <div class="ss-chip" style="border-color:var(--fp)"><span class="ss-chip-num" style="color:var(--fp)">${fpT}</span> FP</div>
+    <div class="ss-chip" style="border-color:var(--flex)"><span class="ss-chip-num" style="color:var(--flex)">${flexT}</span> FLEX</div>
+  `;
+
+  const tableRows=zones.map(z=>{
+    if(!z.techs.length) return '';
+    return z.techs.map((name,i)=>`
+      <tr class="ss-tr">
+        ${i===0?`<td class="ss-zone-cell" rowspan="${z.techs.length}" style="color:${z.color};border-left:3px solid ${z.color};">${z.name}</td>`:''}
+        <td class="ss-name-cell">${name}</td>
+      </tr>`).join('');
+  }).join('');
+
+  document.getElementById('ss-table-wrap').innerHTML=`
+    <table class="ss-table">
+      <thead><tr>
+        <th style="width:160px;">Zona</th>
+        <th>Técnico</th>
+      </tr></thead>
+      <tbody>${tableRows}</tbody>
+    </table>`;
+
+  document.getElementById('checklist').innerHTML=CHECKLIST_ITEMS.map((item,i)=>`
+    <div class="check-item" id="ci-${i}">
+      <input type="checkbox" id="cb-${i}" onchange="toggleCheck(${i})">
+      <label for="cb-${i}">${item}</label>
+    </div>`).join('');
+}
+
+function toggleCheck(i){
+  const cb=document.getElementById('cb-'+i);
+  document.getElementById('ci-'+i).classList.toggle('done',cb.checked);
+}
+
+// ========== PLANNING — NAME MAP (full name → short name) ==========
+const NAME_MAP = {
+  'sergio blanco primicia':'Sergio','julio sanchez fernandez de villalta':'Julio',
+  'sebastian caballero brito':'Sebastian','gonzalo cortés sufuentes':'Gonza',
+  'gonzalo cortes sufuentes':'Gonza','raul ruiz jara':'Raul R.',
+  'jorge arco ruiz':'Jorge A.','iago cadilla martínez':'Iago C.',
+  'iago cadilla martinez':'Iago C.','adrián banda morón':'Adrian B.',
+  'adrian banda moron':'Adrian B.','marcos torres roldán':'Marcos T.',
+  'marcos torres roldan':'Marcos T.','sergio benavides san josé':'Sergio Benavides',
+  'sergio benavides san jose':'Sergio Benavides','guillermo garcía nievas':'Guillermo Garcia',
+  'guillermo garcia nievas':'Guillermo Garcia','sergio santaella muñoz':'Sergio Santaella',
+  'sergio santaella munoz':'Sergio Santaella','sergio cucó murcia':'Sergio Cuco',
+  'sergio cuco murcia':'Sergio Cuco','eduardo sienes garcía':'Eduardo Sienes',
+  'eduardo sienes garcia':'Eduardo Sienes','juan suárez domínguez':'Juan Suárez',
+  'juan suarez dominguez':'Juan Suárez','alejandro gómez abraldes':'Alejandro G.',
+  'alejandro gomez abraldes':'Alejandro G.','borja sanchez mendez':'Borja S.',
+  'borja sánchez méndez':'Borja S.','paula santurde martinez':'Paula S.',
+  'paula santurde martínez':'Paula S.','maría manuela cervera león':'Manuela',
+  'maria manuela cervera leon':'Manuela','josé maría manzanera león':'Jose Manuel',
+  'jose maria manzanera leon':'Jose Manuel','leonardo moreno quiroga':'Leonardo',
+  'ángel adorna pacheco':'Angel A','angel adorna pacheco':'Angel A',
+  'borisz mackovic':'Borisz M.','borja ruiz lópez':'Borja ruiz',
+  'borja ruiz lopez':'Borja ruiz','carlos ricardo cuello garcía':'Carlos R C',
+  'carlos ricardo cuello garcia':'Carlos R C',
+};
+
+// today's attendance from paste
+// today's attendance — replaced by new data model below
+
+function togglePaste(){
+  const body=document.getElementById('paste-body');
+  body.classList.toggle('hidden');
+  if(!body.classList.contains('hidden'))
+    setTimeout(()=>document.getElementById('paste-input').focus(),100);
+}
+
+let pasteShift='M'; // default Morning
+
+function selectPasteShift(s, el){
+  pasteShift=s;
+  document.querySelectorAll('#shift-btn-M,#shift-btn-A,#shift-btn-N').forEach(b=>{
+    b.className='zone-btn';
+    b.style.fontFamily="'Roboto Mono',monospace";
+    b.style.fontSize='11px';
+  });
+  el.classList.add(s==='M'?'sel-fp':s==='A'?'sel-goh':'sel-flex');
+}
+
+function parseXLS(){
+  const fileInput=document.getElementById('xls-input');
+  if(!fileInput.files.length){alert('Selecciona un archivo XLS primero');return;}
+  const file=fileInput.files[0];
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const data=new Uint8Array(e.target.result);
+      const wb=XLSX.read(data,{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+      processXLSRows(rows);
+    }catch(err){
+      alert('Error leyendo el archivo: '+err.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// Also keep text paste as fallback
+function parsePaste(){
+  const raw=document.getElementById('paste-input')?.value||'';
+  if(!raw.trim()) return;
+  // fallback: use line-by-line parser
+  const NAME_RE=/^[A-ZÁÉÍÓÚÜÑ][a-záéíóúüñA-ZÁÉÍÓÚÜÑ\w]+(?:\s+[A-ZÁÉÍÓÚÜÑ\w][a-záéíóúüñA-ZÁÉÍÓÚÜÑ\w]*){1,5}$/;
+  const SHIFT_RE=/^(M|A|N|NExt)$/;
+  const TIME_RE=/^\d{2}:\d{2}-\d{2}:\d{2}$/;
+  const STATUS_RE=/^(Sick|Hol|HOL|SICK|NExt)$/i;
+  const SKIP_RE=/^(Team Leader|Maintenance Technician|Production Assistant|JV Test|May\s+\d|Su\d|Sa\d|\d+$)/i;
+  const lines=raw.split('\n').map(l=>l.trim());
+  const entries=[];let pendingNames=[];let i=0;
+  while(i<lines.length){
+    const line=lines[i];
+    if(!line||SKIP_RE.test(line)){i++;continue;}
+    if(NAME_RE.test(line)){pendingNames.push(line);i++;continue;}
+    if(STATUS_RE.test(line)){
+      const isHol=line.toLowerCase().startsWith('hol');
+      i++;
+      while(i<lines.length&&!lines[i])i++;
+      let shift=isHol?'H':'SICK';let time='';
+      if(i<lines.length&&SHIFT_RE.test(lines[i])){shift=lines[i];i++;}
+      while(i<lines.length&&!lines[i])i++;
+      if(i<lines.length&&TIME_RE.test(lines[i])){time=lines[i];i++;}
+      pendingNames.forEach(n=>entries.push({fullName:n,shift:isHol?'H':'SICK',time}));
+      pendingNames=[];continue;
+    }
+    if(SHIFT_RE.test(line)){
+      const shift=line;i++;
+      while(i<lines.length&&!lines[i])i++;
+      let time='';
+      if(i<lines.length&&TIME_RE.test(lines[i])){time=lines[i];i++;}
+      pendingNames.forEach(n=>entries.push({fullName:n,shift,time}));
+      pendingNames=[];continue;
+    }
+    i++;
+  }
+  pendingNames.forEach(n=>entries.push({fullName:n,shift:'52',time:'L-V'}));
+  window.pasteAllEntries=entries;
+  buildPreview(entries);
+}
+
+function processXLSRows(rows){
+  const SHIFT_MAP={
+    '05:45':'M','06:00':'M',
+    '13:45':'A','14:00':'A',
+    '21:45':'N','22:00':'N',
+    '08:30':'NEN','09:00':'NEN',
+    '00:00':'HOL'
+  };
+  const SKIP=['Shifts Team','Employees','Tabla de cobertura','Shifts','Total hours',
+              'M','A','N','L','Holidays','NExt','Trai'];
+  const entries=[];
+
+  for(const row of rows){
+    const nameRaw=String(row[0]||'').replace(/\n/g,' ').trim();
+    const timeRaw=String(row[1]||'').replace(/\n/g,' ').trim();
+    if(!nameRaw||SKIP.some(s=>nameRaw.startsWith(s))) continue;
+
+    // Extract all times, ignore 00:00-00:00 placeholder
+    const allTimes=[...timeRaw.matchAll(/\d{2}:\d{2}-\d{2}:\d{2}/g)].map(m=>m[0]);
+    const realTime=allTimes.find(t=>t!=='00:00-00:00')||'';
+    const onlyHol=allTimes.length>0&&!realTime&&allTimes[0]==='00:00-00:00';
+
+    let shift='52';
+    if(realTime){
+      shift=SHIFT_MAP[realTime.slice(0,5)]||'?';
+    }
+    if(onlyHol||/hol|vacation/i.test(timeRaw)) shift='HOL';
+    if(/sick|baja/i.test(timeRaw)) shift='SICK';
+
+    entries.push({fullName:nameRaw, shift, time:realTime, annotation:timeRaw});
+  }
+
+  window.pasteAllEntries=entries;
+  buildPreview(entries);
+}
+
+function buildPreview(entries){
+  const shiftLabel={'M':'Morning','A':'Afternoon','N':'Night'}[pasteShift]||'Morning';
+  const myEntries=entries.filter(e=>e.shift===pasteShift);
+
+  const myMapped=myEntries.map(e=>{
+    const lower=e.fullName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    let short=null;
+    for(const [k,v] of Object.entries(NAME_MAP)){
+      const kNorm=k.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+      if(lower===kNorm||lower.includes(kNorm)||kNorm.includes(lower)){short=v;break;}
+    }
+    const planRow=PLANNING.find(p=>short&&p.name===short);
+    return{fullName:e.fullName,shortName:short||'',zone:planRow?.zone||'',time:e.time,mapped:!!short};
+  });
+
+  const extrasCount=entries.filter(e=>e.shift!==pasteShift&&e.shift!=='H'&&e.shift!=='SICK'&&e.shift!=='52'&&e.shift!=='HOL'&&e.shift!=='?').length;
+  const s52Count=entries.filter(e=>e.shift==='52').length;
+
+  const result=document.getElementById('paste-result');
+  result.classList.remove('hidden');
+  result.innerHTML=`
+    <div class="parse-section-title" style="margin-bottom:6px;">${shiftLabel} — ${myMapped.length} personas · ${extrasCount} otros turnos · ${s52Count} 5/2</div>
+    <div style="overflow-x:auto;margin-bottom:10px;max-height:300px;overflow-y:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <thead style="position:sticky;top:0;background:var(--s1);"><tr>
+          <th style="padding:5px 10px;text-align:left;color:var(--muted);font-family:'Roboto Mono',monospace;font-size:10px;border-bottom:1px solid var(--border);">NOMBRE</th>
+          <th style="padding:5px 10px;text-align:left;color:var(--muted);font-family:'Roboto Mono',monospace;font-size:10px;border-bottom:1px solid var(--border);">CORTO</th>
+          <th style="padding:5px 10px;text-align:left;color:var(--muted);font-family:'Roboto Mono',monospace;font-size:10px;border-bottom:1px solid var(--border);">ZONA</th>
+          <th style="padding:5px 10px;text-align:left;color:var(--muted);font-family:'Roboto Mono',monospace;font-size:10px;border-bottom:1px solid var(--border);">HORARIO</th>
+        </tr></thead>
+        <tbody>
+          ${myMapped.map((e,i)=>`<tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:5px 10px;color:${e.mapped?'var(--text)':'var(--osr)'};">${e.fullName}</td>
+            <td style="padding:5px 10px;"><input value="${e.shortName}" style="background:var(--s2);border:1px solid var(--border);border-radius:4px;padding:3px 7px;font-size:12px;color:var(--text);width:110px;outline:none;" oninput="pasteMorning[${i}].shortName=this.value"></td>
+            <td style="padding:5px 10px;">
+              <select style="background:var(--s2);border:1px solid var(--border);border-radius:4px;padding:3px 7px;font-size:12px;color:var(--text);outline:none;" onchange="pasteMorning[${i}].zone=this.value">
+                <option value="">—</option>
+                ${"FP,GOH,FLEX,OSR,TL,FLOW,SP,S FP,S GOH".split(',').map(z=>`<option value="${z}" ${e.zone===z?'selected':''}>${z}</option>`).join('')}
+              </select>
+            </td>
+            <td style="padding:5px 10px;color:var(--muted);font-family:'Roboto Mono',monospace;">${e.time}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+    <button class="parse-apply-btn" onclick="applyPasteMorning()">Aplicar turno →</button>
+  `;
+  window.pasteMorning=myMapped;
+  window.pasteShiftLabel=shiftLabel;
+}
+function applyPasteMorning(){
+  if(!window.pasteMorning) return;
+  const shiftLabel=window.pasteShiftLabel||'Morning';
+  const allEntries=window.pasteAllEntries||[];
+  const staffNames=new Set(PLANNING.map(p=>p.name));
+
+  // Reset — remove any previously added 5/2 entries
+  for(let i=PLANNING.length-1;i>=0;i--){
+    if(PLANNING[i]._is52) PLANNING.splice(i,1);
+  }
+  for(let i=TECHS.length-1;i>=0;i--){
+    if(TECHS[i]._is52) TECHS.splice(i,1);
+  }
+  todayData={};
+  todayExtras=[];
+  today52=[];
+  pasteApplied=true;
+
+  // Build fullName → preview entry lookup
+  const nameMap={};
+  window.pasteMorning.forEach(e=>{ if(e.shortName) nameMap[e.fullName]=e; });
+
+  // 1. Process STAFF in my shift — update todayData
+  window.pasteMorning.forEach(e=>{
+    if(!e.shortName||!staffNames.has(e.shortName)) return;
+    const planRow=PLANNING.find(p=>p.name===e.shortName);
+    todayData[e.shortName]={shift:pasteShift, time:e.time, zone:e.zone||planRow?.zone||''};
+    if(e.zone&&planRow) planRow.zone=e.zone;
+  });
+
+  // 2. Everyone with MY SAME shift NOT in PLANNING → add as 5/2
+  //    Only people working the same shift as me are relevant
+  allEntries.filter(e=>{
+    if(e.shift!==pasteShift) return false; // only MY shift
+    const mapped=nameMap[e.fullName];
+    const shortName=mapped?.shortName||e.fullName;
+    return !staffNames.has(shortName); // not already in staff
+  }).forEach(e=>{
+    const shortName=nameMap[e.fullName]?.shortName||e.fullName;
+    // Add to PLANNING dynamically for today (don't duplicate)
+    const existing=PLANNING.find(p=>p.name===shortName||p._fullName===e.fullName);
+    if(!existing){
+      PLANNING.push({
+        name:shortName,
+        days:['—','—','—','—','—','—'],
+        zone:'',
+        role:'5/2',
+        _is52:true,
+        _fullName:e.fullName,
+      });
+    }
+    todayData[shortName]={shift:e.shift, time:e.time, zone:''};
+    today52.push({fullName:e.fullName, shortName, time:e.time});
+  });
+
+  // 3. No-shift entries (empty column B) = not working today → ignore
+  // HOL/SICK = mark as absent in todayData
+  allEntries.filter(e=>e.shift==='HOL'||e.shift==='SICK').forEach(e=>{
+    const mapped=nameMap[e.fullName];
+    const shortName=mapped?.shortName||'';
+    if(staffNames.has(shortName)){
+      todayData[shortName]={shift:e.shift, time:'', zone:''};
+    }
+  });
+
+  document.getElementById('paste-body').classList.add('hidden');
+  document.getElementById('paste-result').classList.add('hidden');
+  if(document.getElementById('xls-input')) document.getElementById('xls-input').value='';
+
+  const sub=document.getElementById('paste-sub-msg');
+  if(sub){
+    sub.textContent=`${shiftLabel} · ${Object.keys(todayData).length} en turno · ${today52.length} 5/2 cargados`;
+    sub.style.color='var(--flex)';
+  }
+
+  // Also update TECHS array with 5/2 workers so they appear in task assignment lists
+  today52.forEach(e=>{
+    if(!TECHS.find(t=>t.name===e.shortName)){
+      TECHS.push({name:e.shortName, zone:'', sub:'5/2', _is52:true});
+    }
+  });
+
+  renderMP();
+  renderTasksView(); // refresh tech lists
+}
+
+// ========== PLANNING EDIT ==========
+const ZONE_OPTIONS=['FP','GOH','FLEX','OSR','TL','FLOW','SP','S FP','S GOH','SICK','H','—'];
+let openCellEl=null;
+
+function closeCellEdit(){
+  if(openCellEl){openCellEl.querySelector('.cell-edit')?.remove();openCellEl=null;}
+}
+
+function editCell(td, pi, di){
+  closeCellEdit();
+  openCellEl=td;
+  const cur=PLANNING[pi].days[di];
+  const menu=document.createElement('div');
+  menu.className='cell-edit';
+  menu.innerHTML=ZONE_OPTIONS.map(o=>
+    `<div class="cell-opt ${o===cur?'':''}${o===cur?'style="color:var(--flex)"':''}" onclick="setCellVal(${pi},${di},'${o}')">${o==='—'?'— (vacío)':o}</div>`
+  ).join('');
+  td.appendChild(menu);
+  document.addEventListener('click', outsideClose, {once:true, capture:true});
+}
+
+function outsideClose(e){
+  if(openCellEl&&!openCellEl.contains(e.target)) closeCellEdit();
+}
+
+function setCellVal(pi,di,val){
+  PLANNING[pi].days[di]=val;
+  // auto-update zone from most frequent non-H non-SICK day
+  const freq={};
+  PLANNING[pi].days.forEach(d=>{if(d!=='H'&&d!=='SICK'&&d!=='—')freq[d]=(freq[d]||0)+1;});
+  const top=Object.entries(freq).sort((a,b)=>b[1]-a[1])[0];
+  if(top) PLANNING[pi].zone=top[0];
+  closeCellEdit();
+  renderMP();
+}
+
+function editName(td, pi){
+  closeCellEdit();
+  openCellEl=td;
+  const inp=document.createElement('input');
+  inp.value=PLANNING[pi].name;
+  inp.style.cssText='background:var(--s2);border:1px solid var(--flex);border-radius:4px;padding:4px 8px;font-size:13px;color:var(--text);width:140px;outline:none;font-family:Source Sans 3,sans-serif;';
+  inp.onblur=()=>{PLANNING[pi].name=inp.value.trim()||PLANNING[pi].name;closeCellEdit();renderMP();};
+  inp.onkeydown=e=>{if(e.key==='Enter')inp.blur();if(e.key==='Escape'){closeCellEdit();renderMP();}};
+  const wrap=document.createElement('div');
+  wrap.className='cell-edit';
+  wrap.style.cssText='padding:8px;min-width:160px;';
+  wrap.appendChild(inp);
+  td.appendChild(wrap);
+  setTimeout(()=>inp.focus(),50);
+  document.addEventListener('click', outsideClose, {once:true, capture:true});
+}
+
+function addNewRow(){
+  PLANNING.push({name:'Nuevo técnico',days:['—','—','—','—','—','—'],zone:'—'});
+  renderMP();
+}
+
+function deleteRow(pi,e){
+  e.stopPropagation();
+  PLANNING.splice(pi,1);
+  renderMP();
+}
+
+// ========== PLANNING DATA MODEL ==========
+// todayData: map of shortName → {shift, time, zone, isExtra, is52}
+let todayData = {};
+let pasteApplied = false;
+let todayExtras = []; // [{fullName, shift, time, zone}]
+let today52 = [];     // [{fullName, shift, time}]
+
+// Generate rolling 6-day headers (last 6 working days up to today)
+function getPlanHeaders(){
+  const days=[];
+  const d=new Date();
+  while(days.length<6){
+    if(d.getDay()!==0&&d.getDay()!==6){
+      days.unshift(d.getDate().toString().padStart(2,'0')+'/'+(d.getMonth()+1).toString().padStart(2,'0'));
+    }
+    d.setDate(d.getDate()-1);
+  }
+  return days;
+}
+
+function renderMP(){
+  const q=document.getElementById('mp-search').value.toLowerCase();
+  const headers=getPlanHeaders();
+
+  // Update header cells
+  headers.forEach((h,i)=>{
+    const th=document.getElementById('th-'+i);
+    if(th) th.textContent=h;
+  });
+
+  // Staff fixed table
+  const rows=PLANNING.filter(p=>!q||p.name.toLowerCase().includes(q));
+  document.getElementById('mp-tbody').innerHTML=rows.map((p,ri)=>{
+    const pi=PLANNING.indexOf(p);
+    const td=todayData[p.name];
+    let hoyCell='<span style="color:var(--dim);font-size:11px;">—</span>';
+    if(pasteApplied){
+      if(td){
+        hoyCell=`<span class="hoy-pill hoy-present">${td.shift==='H'?'HOL':td.shift==='SICK'?'SICK':'En turno'}</span>`;
+      } else {
+        hoyCell=`<span class="hoy-pill hoy-absent">Ausente</span>`;
+      }
+    }
+    return`<tr style="${pasteApplied&&!td&&p.zone!=='—'?'opacity:.45':''}">
+      <td style="cursor:pointer;" onclick="editName(this,${pi})">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="mp-name">${p.name}</span>
+          <span style="font-size:10px;color:var(--dim);">✎</span>
+        </div>
+      </td>
+      ${p.days.map((d,di)=>`<td class="editable" onclick="editCell(this,${pi},${di})"><span class="pill ${pillClass(d)}">${d}</span></td>`).join('')}
+      <td><span class="pill ${pillClass(p.zone)}">${p.zone}</span></td>
+      <td style="font-family:'Roboto Mono',monospace;font-size:11px;">${p.role||''}</td>
+      <td>${hoyCell}</td>
+    </tr>`;
+  }).join('');
+
+  // Hide extras section (no longer used)
+  document.getElementById('mp-extras-section').style.display='none';
+
+  // 5/2 section — shown as separate table with editable zone
+  const s52Section=document.getElementById('mp-52-section');
+  const s52Tbody=document.getElementById('mp-52-tbody');
+  if(pasteApplied&&today52.length){
+    s52Section.style.display='block';
+    s52Tbody.innerHTML=today52.map((e,i)=>{
+      const planRow=PLANNING.find(p=>p.name===e.shortName||p._fullName===e.fullName);
+      const zone=planRow?.zone||'';
+      return`<tr style="${zone?'':'background:rgba(245,158,11,.05)'}">
+        <td>${e.fullName}${e.shortName&&e.shortName!==e.fullName?` <span style="font-size:10px;color:var(--muted);">(${e.shortName})</span>`:''}</td>
+        <td>
+          <select class="extras-zone-sel" onchange="set52Zone(${i},this.value)">
+            <option value="">— asignar zona —</option>
+            ${['FP','GOH','FLEX','OSR','TL','SP'].map(z=>`<option value="${z}" ${zone===z?'selected':''}>${z}</option>`).join('')}
+          </select>
+        </td>
+        <td style="font-family:'Roboto Mono',monospace;font-size:11px;color:var(--muted);">${e.time}</td>
+      </tr>`;
+    }).join('');
+  } else {
+    s52Section.style.display='none';
+  }
+
+  // Alerts: anyone working today with no zone (staff + 5/2 with assigned zone empty)
+  const alerts=document.getElementById('mp-alerts');
+  if(pasteApplied){
+    const noZone=PLANNING.filter(p=>todayData[p.name]&&(!p.zone||p.zone==='—')&&todayData[p.name].shift!=='HOL'&&todayData[p.name].shift!=='SICK');
+    if(noZone.length){
+      alerts.innerHTML=`<div class="alert-box">
+        <span class="alert-box-icon">⚠️</span>
+        <div><strong>${noZone.length} sin zona:</strong> ${noZone.map(p=>p.name).join(', ')}</div>
+      </div>`;
+    } else {alerts.innerHTML='';}
+  } else {alerts.innerHTML='';}
+}
+
+function set52Zone(i, zone){
+  const e=today52[i];
+  if(!e) return;
+  // Update PLANNING entry for this 5/2 worker
+  const planRow=PLANNING.find(p=>p.name===e.shortName||p._fullName===e.fullName);
+  if(planRow){
+    planRow.zone=zone;
+    // Also update TECHS entry so they appear in task lists
+    const techRow=TECHS.find(t=>t.name===e.shortName);
+    if(techRow) techRow.zone=zone;
+  }
+  if(todayData[e.shortName]) todayData[e.shortName].zone=zone;
+  renderTasksView(); // refresh availability dots
+}
+
+function toggleF(z,el){
+  if(mpFilters.has(z)){mpFilters.delete(z);el.classList.remove('on');}
+  else{mpFilters.add(z);el.classList.add('on');}
+  renderMP();
+}
+
+// ========== ALL STATUSES ==========
+const ALL_STATUSES = [
+  {key:'pending',         label:'Pending',           cls:'sel-pending'},
+  {key:'In Progress',     label:'In Progress',       cls:'sel-inprogress'},
+  {key:'Monitoring',      label:'Monitoring',        cls:'sel-monitoring'},
+  {key:'Done',            label:'Done',              cls:'sel-done'},
+  {key:'Report Next Shift',label:'Report Next Shift',cls:'sel-reportnext'},
+  {key:'Reminder',        label:'Reminder',          cls:'sel-reminder'},
+  {key:'Shift Handover',  label:'Shift Handover',    cls:'sel-handover'},
+];
+
+let isDirty=false;
+function markDirty(){
+  isDirty=true;
+  document.getElementById('btn-save-task').style.display='';
+}
+
+// ========== MODAL ==========
+function openModal(id){
+  const t=TASKS.find(x=>String(x.id)===String(id));
+  if(!t)return;
+  selectedTask=t;
+  isDirty=false;
+  document.getElementById('btn-save-task').style.display='none';
+
+  document.getElementById('m-woid').textContent='#'+(t.woid||t.id);
+  document.getElementById('m-edit-title').value=t.title||'';
+  document.getElementById('m-edit-note').value=t.note||'';
+  document.getElementById('m-edit-zona').value=(t.zones&&t.zones[0])||'';
+  document.getElementById('m-edit-prio').value=t.prio||'media';
+
+  // Status grid
+  const sg=document.getElementById('m-status-grid');
+  sg.innerHTML=ALL_STATUSES.map(s=>`
+    <button class="status-opt ${t.status===s.key?s.cls:''}"
+      onclick="selectStatus('${s.key}',this,'${s.cls}')">${s.label}</button>
+  `).join('');
+
+  // Techs assigned
+  refreshTechsDisplay();
+
+  // Populate assign list directly
+  refreshAssignList();
+
+  document.getElementById('overlay').classList.remove('hidden');
+  // Focus title if empty
+  if(!t.title) setTimeout(()=>document.getElementById('m-edit-title').focus(),100);
+}
+
+function refreshTechsDisplay(){
+  if(!selectedTask)return;
+  document.getElementById('m-techs').innerHTML=selectedTask.techs&&selectedTask.techs.length
+    ? selectedTask.techs.map(x=>`<span class="tech-chip" style="font-size:12px;padding:3px 9px;">${x}
+        <span onclick="removeTech('${x}')" style="cursor:pointer;margin-left:4px;opacity:.5;">✕</span>
+      </span>`).join('')
+    : '<span style="color:var(--muted);font-size:12px;">Sin asignar</span>';
+}
+
+function refreshAssignList(){
+  if(!selectedTask)return;
+  const taskZones=selectedTask.zones&&selectedTask.zones.length?selectedTask.zones:['GOH','FP','FLEX'];
+  const relevant=TECHS.filter(t=>taskZones.includes(t.zone)||t.zone==='FLEX'||taskZones.includes('FLEX'));
+
+  const rowData=relevant.map(t=>{
+    const assigned=selectedTask.techs.includes(t.name);
+    // Status based ONLY on other tasks (not the current one)
+    const otherTasks=TASKS.filter(task=>task.techs.includes(t.name)&&task.status!=='Done'&&String(task.id)!==String(selectedTask.id));
+    const activeInOther=otherTasks.some(task=>task.status==='In Progress'||task.status==='Monitoring');
+    const pendingCount=otherTasks.length;
+    const zc=t.zone==='FLEX'?'tz-flex':t.zone==='GOH'?'tz-goh':'tz-fp';
+    return{t,assigned,activeInOther,pendingCount,zc};
+  });
+
+  // Sort: assigned first, then free, then pending, then active last
+  rowData.sort((a,b)=>{
+    const score=r=>r.assigned?0:r.activeInOther?3:r.pendingCount>0?2:1;
+    return score(a)-score(b);
+  });
+
+  document.getElementById('assign-list').innerHTML=rowData.map(({t,assigned,activeInOther,pendingCount,zc})=>{
+    let statusHtml,dotStyle,nameStyle='';
+    if(assigned){
+      // Show their real status from other tasks
+      if(activeInOther){
+        statusHtml=`<span class="assign-status as-busy">Activo + asignado</span>`;
+        dotStyle='background:#1a3a22;';
+      } else if(pendingCount>0){
+        statusHtml=`<span class="assign-status" style="background:rgba(227,179,65,.12);color:var(--busy);">Asignado +${pendingCount}</span>`;
+        dotStyle='background:#e3b341;';
+      } else {
+        statusHtml=`<span class="assign-status as-avail">Asignado</span>`;
+        dotStyle='background:#56d364;box-shadow:0 0 4px rgba(86,211,100,.5);';
+      }
+    } else if(activeInOther){
+      statusHtml=`<span class="assign-status as-busy">Activo</span>`;
+      dotStyle='background:#1a3a22;';
+      nameStyle='color:var(--dim);';
+    } else if(pendingCount>0){
+      statusHtml=`<span class="assign-status" style="background:rgba(227,179,65,.12);color:var(--busy);">${pendingCount} pendiente${pendingCount>1?'s':''}</span>`;
+      dotStyle='background:#e3b341;box-shadow:0 0 4px rgba(227,179,65,.4);';
+    } else {
+      statusHtml=`<span class="assign-status as-avail">Disponible</span>`;
+      dotStyle='background:#56d364;box-shadow:0 0 4px rgba(86,211,100,.5);';
+    }
+    const dimmed=activeInOther&&!assigned;
+    return`<div class="assign-row${assigned?' assigned':''}${dimmed?' busy-row':''}" onclick="toggleAssign('${t.name}')">
+      <div style="width:7px;height:7px;border-radius:50%;flex-shrink:0;${dotStyle}"></div>
+      <span class="assign-name" style="${nameStyle}">${t.name}</span>
+      <span class="assign-zone-tag ${zc}">${t.sub}</span>
+      ${statusHtml}
+    </div>`;
+  }).join('');
+}
+
+function selectStatus(key, el, cls){
+  if(!selectedTask)return;
+  selectedTask.status=key;
+  document.querySelectorAll('.status-opt').forEach(b=>{
+    b.className='status-opt';
+  });
+  el.classList.add(cls);
+  markDirty();
+}
+
+function removeTech(name){
+  if(!selectedTask)return;
+  const titleVal=document.getElementById('m-edit-title').value.trim();
+  if(titleVal) selectedTask.title=titleVal;
+  selectedTask.note=document.getElementById('m-edit-note').value.trim();
+  selectedTask.techs=selectedTask.techs.filter(t=>t!==name);
+  refreshTechsDisplay();
+  refreshAssignList();
+  renderTasksView();
+  markDirty();
+}
+
+async function saveTaskEdits(){
+  if(!selectedTask)return;
+  const titleVal=document.getElementById('m-edit-title').value.trim();
+  if(titleVal) selectedTask.title=titleVal;
+  selectedTask.note=document.getElementById('m-edit-note').value.trim();
+  const zonaVal=document.getElementById('m-edit-zona').value;
+  selectedTask.zones=zonaVal?[zonaVal]:[];
+  selectedTask.prio=document.getElementById('m-edit-prio').value;
+
+  isDirty=false;
+  document.getElementById('btn-save-task').style.display='none';
+  renderTasksView();
+
+  const taskId=selectedTask.id;
+  const isNew=selectedTask.isNew;
+  const turno=document.querySelector('.shift-sel').value.split('·')[1]?.trim().split(' ')[0]||'Morning';
+  const now=new Date();
+  const pad=n=>String(n).padStart(2,'0');
+  const fecha=`${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+
+  try{
+    setLoading('Guardando...');
+    if(isNew){
+      // Create new in sheet
+      const res=await apiPost({action:'createTarea',data:{
+        titulo: selectedTask.title,
+        nota:   selectedTask.note,
+        zona:   selectedTask.zones[0]||'',
+        prioridad: selectedTask.prio,
+        estado: selectedTask.status==='pending'?'Pending':selectedTask.status,
+        turno,
+        fechaCreacion: fecha,
+      }});
+      if(res.ok){
+        selectedTask.id=res.id;
+        selectedTask.woid=res.id;
+        selectedTask.isNew=false;
+        const woidEl=document.getElementById('m-woid');
+        if(woidEl) woidEl.textContent='#'+res.id;
+      }
+    } else {
+      // Update existing
+      await apiPost({action:'updateEstado', id:taskId, data:{
+        estado: selectedTask.status==='pending'?'Pending':selectedTask.status,
+        techs:  selectedTask.techs,
+        turno,
+        cambiadoPor:'TL',
+        comentario: selectedTask.note||'',
+      }});
+      await apiPost({action:'updateTarea', id:taskId, data:{
+        titulo: selectedTask.title,
+        zona:   selectedTask.zones[0]||'',
+        prioridad: selectedTask.prio,
+        nota:   selectedTask.note,
+      }});
+    }
+  }catch(e){console.warn('Save failed:',e);}
+  finally{
+    setLoading('');
+    // Close modal after explicit save (not when called from closeModal auto-save)
+    if(!_savingOnClose){
+      selectedTask=null;
+      isDirty=false;
+      document.getElementById('overlay').classList.add('hidden');
+    }
+  }
+}
+let _savingOnClose=false;
+
+async function deleteTask(){
+  if(!selectedTask)return;
+  if(!confirm(`¿Eliminar tarea "${selectedTask.title}"?`))return;
+  TASKS.splice(TASKS.indexOf(selectedTask),1);
+  closeModal();
+  renderTasksView();
+}
+
+function closeModal(e){
+  if(e&&e.target!==document.getElementById('overlay')) return;
+  if(selectedTask){
+    const titleVal=document.getElementById('m-edit-title').value.trim();
+    if(selectedTask.isNew&&!titleVal){
+      TASKS.splice(TASKS.indexOf(selectedTask),1);
+      renderTasksView();
+      selectedTask=null;
+      document.getElementById('overlay').classList.add('hidden');
+      return;
+    }
+    if(isDirty){
+      _savingOnClose=true;
+      saveTaskEdits().finally(()=>{ _savingOnClose=false; });
+    }
+  }
+  selectedTask=null;
+  isDirty=false;
+  document.getElementById('overlay').classList.add('hidden');
+}
+
+// kept for compatibility but no longer used as primary action
+async function advanceStatus(){
+  if(!selectedTask)return;
+  const order=['pending','Monitoring','In Progress','Done'];
+  const idx=order.indexOf(selectedTask.status);
+  if(idx<order.length-1){
+    selectedTask.status=order[idx+1];
+    openModal(selectedTask.id);
+    markDirty();
+  }
+}
+
+// ========== TASKS MAIN VIEW ==========
+</script>
+</body>
+</html>
