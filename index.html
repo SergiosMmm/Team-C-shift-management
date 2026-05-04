@@ -3145,7 +3145,9 @@ function resetPlanning(){
   renderTasksView();
 }
 window.resetPlanning=resetPlanning;
-  const e=today52[i];
+window.renderMP=renderMP;
+
+function set52Zone(i, zone){
   if(!e) return;
   const planRow=PLANNING.find(p=>p.name===e.shortName||p._fullName===e.fullName);
   if(planRow){
