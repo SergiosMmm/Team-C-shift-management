@@ -789,21 +789,15 @@ function startRealtimeSync(){
   if(_unsubscribe) _unsubscribe();
   _unsubscribe=onSnapshot(collection(db,'tasks'), snap=>{
     const remoteTasks=snap.docs.map(d=>({...d.data(),_fbId:d.id}));
-    // Merge remote into TASKS without losing local-only state
-    remoteTasks.forEach(remote=>{
-      const existing=TASKS.find(t=>t._fbId===remote._fbId);
-      if(existing){
-        Object.assign(existing, normalizeFirebaseTask(remote));
-      } else {
-        TASKS.push(normalizeFirebaseTask(remote));
-      }
-    });
-    // Remove tasks deleted remotely
-    for(let i=TASKS.length-1;i>=0;i--){
-      if(TASKS[i]._fbId&&!remoteTasks.find(r=>r._fbId===TASKS[i]._fbId)){
-        TASKS.splice(i,1);
-      }
-    }
+    
+    // Keep local-only tasks (LOCAL- prefix, not yet saved to Firebase)
+    const localOnly=TASKS.filter(t=>String(t.id).startsWith('LOCAL-'));
+    
+    // Full replace from Firebase + keep local pending ones
+    TASKS.length=0;
+    remoteTasks.forEach(remote=>TASKS.push(normalizeFirebaseTask(remote)));
+    localOnly.forEach(local=>TASKS.push(local));
+    
     renderTasksView();
   });
 }
