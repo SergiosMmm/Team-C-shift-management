@@ -861,14 +861,16 @@ function prioTag(p){
   return`<span class="status-tag" style="background:var(--flex-bg);color:var(--flex)">Baja</span>`;
 }
 
-// ========== NEW TASK — opens modal directly ==========
+// ========== NEW TASK — save directly to Firebase, let onSnapshot add it ==========
 function openNewTask(zone){
-  const localId='LOCAL-'+Date.now();
-  const localTask={
-    id:localId,
+  // Don't add to local TASKS — open empty modal directly
+  // Task will be created in Firebase when user saves
+  selectedTask={
+    id:'LOCAL-'+Date.now(),
+    _fbId:null,
     woid:'NEW',
     title:'',
-    techs:[],       // always empty
+    techs:[],
     status:'pending',
     source:'',
     note:'',
@@ -877,9 +879,22 @@ function openNewTask(zone){
     isNew:true,
     turno:'',
   };
-  TASKS.push(localTask);
-  renderTasksView();
-  openModal(localId);
+  isDirty=false;
+  document.getElementById('btn-save-task').style.display='none';
+  document.getElementById('m-woid').textContent='#NEW';
+  document.getElementById('m-edit-title').value='';
+  document.getElementById('m-edit-note').value='';
+  document.getElementById('m-edit-zona').value=zone||'';
+  document.getElementById('m-edit-prio').value='media';
+  const sg=document.getElementById('m-status-grid');
+  sg.innerHTML=ALL_STATUSES.map(s=>`
+    <button class="status-opt ${s.key==='pending'?s.cls:''}"
+      onclick="selectStatus('${s.key}',this,'${s.cls}')">${s.label}</button>
+  `).join('');
+  document.getElementById('m-techs').innerHTML='<span style="color:var(--muted);font-size:12px;">Sin asignar</span>';
+  refreshAssignList();
+  document.getElementById('overlay').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('m-edit-title').focus(),100);
 }
 async function saveNewTask(){
   const desc=document.getElementById('new-desc').value.trim();
@@ -1871,9 +1886,8 @@ function closeModal(e){
   if(e&&e.target!==document.getElementById('overlay')) return;
   if(selectedTask){
     const titleVal=document.getElementById('m-edit-title').value.trim();
+    // If new task with no description — discard silently
     if(selectedTask.isNew&&!titleVal){
-      TASKS.splice(TASKS.indexOf(selectedTask),1);
-      renderTasksView();
       selectedTask=null;
       document.getElementById('overlay').classList.add('hidden');
       return;
