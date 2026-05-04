@@ -1907,6 +1907,39 @@ async function advanceStatus(){
 }
 
 // ========== TASKS MAIN VIEW ==========
+
+// ========== EXPOSE TO GLOBAL SCOPE (required for onclick handlers with type=module) ==========
+window.openNewTask=openNewTask;
+window.goTab=goTab;
+window.openModal=openModal;
+window.closeModal=closeModal;
+window.quickDelete=quickDelete;
+window.deleteTask=deleteTask;
+window.saveTaskEdits=saveTaskEdits;
+window.toggleAssign=toggleAssign;
+window.removeTech=removeTech;
+window.selectStatus=selectStatus;
+window.markDirty=markDirty;
+window.setAF=setAF;
+window.renderAllTasks=renderAllTasks;
+window.togglePaste=togglePaste;
+window.selectPasteShift=selectPasteShift;
+window.parseXLS=parseXLS;
+window.parsePaste=parsePaste;
+window.applyPasteMorning=applyPasteMorning;
+window.set52Zone=set52Zone;
+window.toggleF=toggleF;
+window.toggleCheck=toggleCheck;
+window.editCell=editCell;
+window.editName=editName;
+window.setCellVal=setCellVal;
+window.addNewRow=addNewRow;
+window.deleteRow=deleteRow;
+window.selZone=selZone;
+window.selPrio=selPrio;
+window.closeSheet=closeSheet;
+window.saveNewTask=saveNewTask;
+
 </script>
 </body>
 </html>
