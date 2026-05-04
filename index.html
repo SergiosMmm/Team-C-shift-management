@@ -2777,7 +2777,13 @@ function applyPasteMorning(){
   if(!window.pasteMorning) return;
   const shiftLabel=window.pasteShiftLabel||'Morning';
   const allEntries=window.pasteAllEntries||[];
-  const staffNames=new Set(PLANNING.map(p=>p.name));
+  // Build staffNames from fixed staff (never from _is52 entries)
+  // Use backup if available as it's guaranteed to have correct names
+  const fixedStaff = window._PLANNING_BACKUP && window._PLANNING_BACKUP.length > 0
+    ? window._PLANNING_BACKUP
+    : PLANNING.filter(p=>!p._is52);
+  const staffNames = new Set(fixedStaff.map(p=>p.name).filter(Boolean));
+  console.log('staffNames built from:', fixedStaff.length, 'entries, size:', staffNames.size, [...staffNames].slice(0,5));
 
   // Reset — remove only previously added 5/2 entries, never touch fixed staff
   for(let i=PLANNING.length-1;i>=0;i--){
