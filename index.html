@@ -517,7 +517,7 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
 
   <!-- SECTION 3: 5/2 -->
   <div id="mp-52-section" style="display:none;">
-    <div class="mp-section-title" style="color:var(--muted);">5/2 — Trabajadores en tu turno hoy <span style="font-family:'Roboto Mono',monospace;font-size:11px;opacity:.7;">(asigna zona para que aparezcan como disponibles)</span></div>
+    <div class="mp-section-title" style="color:var(--muted);">Turno L–V <span style="font-family:'Roboto Mono',monospace;font-size:11px;opacity:.7;">(asigna zona para que aparezcan como disponibles)</span></div>
     <div class="mp-wrap">
       <table class="mp-table">
         <thead><tr>
@@ -616,6 +616,7 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
     <div style="font-size:11px;color:var(--muted);font-family:'Roboto Mono',monospace;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Importar trabajadores a Firebase</div>
     <p style="font-size:12px;color:var(--muted);margin-bottom:10px;">Sube todos los trabajadores a la colección <code>workers</code> de Firebase. Solo es necesario hacerlo una vez.</p>
     <button class="btn btn-p" onclick="importWorkersToFirebase()" id="btn-import-workers">Importar a Firebase</button>
+    <button class="btn" onclick="fixWorkerShortNames()" style="margin-left:8px;">Corregir nombres cortos</button>
     <span id="import-status" style="font-size:12px;color:var(--muted);margin-left:10px;"></span>
   </div>
 </div>
@@ -2850,7 +2851,9 @@ function applyPasteMorning(){
     if(e.zone&&planRow) planRow.zone=e.zone;
   });
 
-  // 2. Everyone with MY SAME shift NOT in PLANNING → add as 5/2
+  // 2. Everyone with MY SAME shift NOT in PLANNING:
+  //    - If they have a rotative shift (M/A/N) → extras, show in main table
+  //    - If no shift (52) → 5/2, show in separate section
   const seen52=new Set();
   allEntries.filter(e=>{
     if(e.shift!==pasteShift) return false;
@@ -2859,21 +2862,38 @@ function applyPasteMorning(){
     return !inStaff(shortName);
   }).forEach(e=>{
     const shortName=nameMap[e.fullName]?.shortName||e.fullName;
-    if(seen52.has(shortName)) return; // prevent duplicates
+    if(seen52.has(shortName)) return;
     seen52.add(shortName);
+
+    // Get worker info from WORKERS array
+    const workerInfo=WORKERS.find(w=>w.name===e.fullName);
+    const team=workerInfo?.team||'';
+    const location=workerInfo?.location||'';
+
     const existing=PLANNING.find(p=>p.name===shortName||p._fullName===e.fullName);
     if(!existing){
       PLANNING.push({
         name:shortName,
         days:['—','—','—','—','—','—'],
         zone:'',
-        role:'5/2',
+        role:location||team||'Extra',
         _is52:true,
+        _isExtra:true,
         _fullName:e.fullName,
+        _team:team,
+        _location:location,
       });
     }
     todayData[shortName]={shift:e.shift, time:e.time, zone:''};
-    today52.push({fullName:e.fullName, shortName, time:e.time});
+    today52.push({fullName:e.fullName, shortName, time:e.time, team, location});
+  });
+
+  // 3. People with no shift (52) = L-V fixed schedule workers
+  allEntries.filter(e=>e.shift==='52').forEach(e=>{
+    const shortName=nameMap[e.fullName]?.shortName||e.fullName;
+    if(seen52.has(shortName)) return;
+    seen52.add(shortName);
+    today52.push({fullName:e.fullName, shortName, time:'L–V', team:'', location:''});
   });
 
   // 3. No-shift entries (empty column B) = not working today → ignore
@@ -3060,6 +3080,7 @@ function renderMP(){
       <td style="cursor:pointer;" onclick="editName(this,${pi})">
         <div style="display:flex;align-items:center;gap:6px;">
           <span class="mp-name">${p.name}</span>
+          ${p._isExtra?`<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:var(--osr-bg);color:var(--osr);font-family:'Roboto Mono',monospace;">EXTRA</span>`:''}
           <span style="font-size:10px;color:var(--dim);">✎</span>
         </div>
       </td>
@@ -3098,7 +3119,8 @@ function renderMP(){
   // 5/2 section — shown as separate table with editable zone
   const s52Section=document.getElementById('mp-52-section');
   const s52Tbody=document.getElementById('mp-52-tbody');
-  if(pasteApplied&&today52.length){
+  if(pasteApplied&&today52.filter(e=>e.time==='L–V').length){
+    const lv52=today52.filter(e=>e.time==='L–V');
     s52Section.style.display='block';
     // Separate Maintenance Technicians from Production Assistants
     function render52Row(e,i){
@@ -3117,11 +3139,11 @@ function renderMP(){
     }
 
     // Split by role using WORKERS data
-    const mechs=today52.filter(e=>{
+    const mechs=lv52.filter(e=>{
       const w=WORKERS.find(w=>w.name===e.fullName);
       return !w||w.location==='Maintenance Technician'||!w.location||w.team==='Team 1'||w.team==='Team 2';
     });
-    const pas=today52.filter(e=>{
+    const pas=lv52.filter(e=>{
       const w=WORKERS.find(w=>w.name===e.fullName);
       return w&&w.location==='Production Assistant';
     });
@@ -3598,7 +3620,29 @@ async function deleteWorker(i){
   // TODO: delete from Firebase if _fbId exists
 }
 
-async function importWorkersToFirebase(){
+async function fixWorkerShortNames(){
+  if(!confirm('¿Actualizar los nombres cortos en Firebase?\n\nOK = actualiza shortNames del Team C')) return;
+  const fixes = {
+    'Carlos Ricardo Cuello García': 'Carlos R.C.',
+    'Carlos Ricardo Cuello Garcia': 'Carlos R.C.',
+    'José María Manzanera León': 'Chema',
+    'Jose Maria Manzanera Leon': 'Chema',
+    'María Manuela Cervera León': 'María Manuela Cervera León',
+  };
+  let updated=0;
+  const snap=await getDocs(collection(db,'workers'));
+  for(const d of snap.docs){
+    const w=d.data();
+    const fix=fixes[w.name];
+    if(fix&&w.shortName!==fix){
+      await updateDoc(doc(db,'workers',d.id),{shortName:fix});
+      console.log(`Updated: ${w.name} → ${fix}`);
+      updated++;
+    }
+  }
+  alert(`✓ ${updated} workers actualizados en Firebase. Recarga la app.`);
+}
+window.fixWorkerShortNames=fixWorkerShortNames;
   const btn=document.getElementById('btn-import-workers');
   const status=document.getElementById('import-status');
   btn.disabled=true;
