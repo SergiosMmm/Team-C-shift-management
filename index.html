@@ -477,6 +477,7 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
   <!-- SEARCH -->
   <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
     <div class="s-box" style="flex:1;"><input type="text" id="mp-search" placeholder="Buscar técnico..." oninput="renderMP()"></div>
+    <button class="btn" onclick="resetPlanning()" style="white-space:nowrap;border-color:var(--sick);color:var(--sick);">↺ Reiniciar tabla</button>
   </div>
 
   <!-- SECTION 1: STAFF FIJO -->
@@ -1094,6 +1095,9 @@ async function initApp(){
   renderTasksView();
   renderSS();
   renderMP();
+  // Save backup of fixed planning (before any 5/2 additions)
+  window._PLANNING_BACKUP = PLANNING.filter(p=>!p._is52).map(p=>({...p, days:[...p.days]}));
+  console.log('PLANNING backup saved:', window._PLANNING_BACKUP.length, 'entries');
 }
 
 initApp();
@@ -1257,6 +1261,26 @@ function toggleCheck(i){
   const cb=document.getElementById('cb-'+i);
   document.getElementById('ci-'+i).classList.toggle('done',cb.checked);
 }
+
+// ========== ZONE/PRIO SELECTORS (for task creation sheet) ==========
+function selZone(z, el){
+  newTaskZone=z;
+  document.querySelectorAll('.zone-btn').forEach(b=>b.className='zone-btn');
+  el.className=`zone-btn sel-${z.toLowerCase()}`;
+}
+function selPrio(p, el){
+  newTaskPrio=p;
+  document.querySelectorAll('.prio-btn').forEach(b=>b.className='prio-btn');
+  el.className=`prio-btn sel-${p}`;
+}
+function closeSheet(e){
+  if(!e||e.target===document.getElementById('sheet-bg'))
+    document.getElementById('sheet-bg').classList.add('hidden');
+}
+
+window.selZone=selZone;
+window.selPrio=selPrio;
+window.closeSheet=closeSheet;
 
 // ========== PLANNING — NAME MAP (full name → short name) ==========
 const NAME_MAP = {
@@ -2755,17 +2779,26 @@ function applyPasteMorning(){
   const allEntries=window.pasteAllEntries||[];
   const staffNames=new Set(PLANNING.map(p=>p.name));
 
-  // Reset — remove any previously added 5/2 entries
+  // Reset — remove only previously added 5/2 entries, never touch fixed staff
   for(let i=PLANNING.length-1;i>=0;i--){
     if(PLANNING[i]._is52) PLANNING.splice(i,1);
   }
   for(let i=TECHS.length-1;i>=0;i--){
     if(TECHS[i]._is52) TECHS.splice(i,1);
   }
+
+  // Safety check — if PLANNING got emptied somehow, restore from backup
+  if(PLANNING.length===0&&window._PLANNING_BACKUP&&window._PLANNING_BACKUP.length>0){
+    console.warn('PLANNING was empty, restoring from backup');
+    PLANNING.push(...window._PLANNING_BACKUP);
+  }
+
   todayData={};
   todayExtras=[];
   today52=[];
   pasteApplied=true;
+
+  console.log('PLANNING size after reset:', PLANNING.length, PLANNING.map(p=>p.name).slice(0,5));
 
   // Build fullName → preview entry lookup
   const nameMap={};
@@ -2822,10 +2855,28 @@ function applyPasteMorning(){
   document.getElementById('paste-result').classList.add('hidden');
   if(document.getElementById('xls-input')) document.getElementById('xls-input').value='';
 
-  // Ask if first day of shift cycle — update 6-day headers
-  if(confirm('¿Es el primer día de este ciclo de turno?\n\nOK = actualiza las 6 fechas del planning a partir de hoy.\nCancelar = mantiene las fechas actuales.')){
-    updateShiftHeaders();
-  }
+  // 2-2-2 system: ask day 1 or day 2, update correct column and date header
+  const shiftColMap={'M':[0,1],'A':[2,3],'N':[4,5]};
+  const cols=shiftColMap[pasteShift]||[0,1];
+  const isDay1=confirm(`Turno ${shiftLabel} — ¿qué día es?\n\nOK = Día 1\nCancelar = Día 2`);
+  const colIdx=isDay1?cols[0]:cols[1];
+
+  // Update date header for that column
+  const today=new Date();
+  const pad=n=>String(n).padStart(2,'0');
+  const dateStr=pad(today.getDate())+'/'+pad(today.getMonth()+1);
+  if(!window._shiftDays) window._shiftDays=getPlanHeaders();
+  window._shiftDays[colIdx]=dateStr;
+
+  // Update that column in PLANNING with today's zone for each staff member
+  PLANNING.filter(p=>!p._is52).forEach(p=>{
+    const td=todayData[p.name];
+    if(td){
+      const zone=td.zone||p.zone||'';
+      if(zone&&zone!=='—') p.days[colIdx]=zone;
+      else p.days[colIdx]=td.shift==='HOL'?'H':td.shift==='SICK'?'SICK':'—';
+    }
+  });
 
   const sub=document.getElementById('paste-sub-msg');
   if(sub){
@@ -3058,7 +3109,42 @@ function getPlanHeaders(){
   return days;
 }
 
-function set52Zone(i, zone){
+function resetPlanning(){
+  if(!confirm('¿Reiniciar la tabla de planning?\n\nOK = borra todas las zonas y fechas, mantiene los nombres del equipo.\nCancelar = no hacer nada.')) return;
+
+  // Remove 5/2 entries
+  for(let i=PLANNING.length-1;i>=0;i--){
+    if(PLANNING[i]._is52) PLANNING.splice(i,1);
+  }
+  for(let i=TECHS.length-1;i>=0;i--){
+    if(TECHS[i]._is52) TECHS.splice(i,1);
+  }
+
+  // Reset days to '—' for all fixed staff
+  PLANNING.forEach(p=>{
+    p.days=['—','—','—','—','—','—'];
+  });
+
+  // Reset date headers
+  window._shiftDays=null;
+
+  // Reset today data
+  todayData={};
+  todayExtras=[];
+  today52=[];
+  pasteApplied=false;
+
+  const sub=document.getElementById('paste-sub-msg');
+  if(sub){
+    sub.textContent='Pega el texto de Aturnos para actualizar la tabla del día';
+    sub.style.color='';
+  }
+
+  renderMP();
+  renderSS();
+  renderTasksView();
+}
+window.resetPlanning=resetPlanning;
   const e=today52[i];
   if(!e) return;
   const planRow=PLANNING.find(p=>p.name===e.shortName||p._fullName===e.fullName);
