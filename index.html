@@ -640,7 +640,7 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script>
+<script type="module">
 // ========== DATA ==========
 
 // Technicians with their primary zone
@@ -737,10 +737,21 @@ const CHECKLIST_ITEMS = [
   'Tareas pendientes turno anterior',
 ];
 
-// ========== API ==========
-const SCRIPT_URL='https://script.google.com/macros/s/AKfycbyLq9PpNtahogpGglyFA0HksV_cLh40BgLwogrWNGxT2zzKMnR_VF7ciC8I67P9G935/exec';
-async function apiGet(action){const r=await fetch(`${SCRIPT_URL}?action=${action}`);return r.json();}
-async function apiPost(body){const r=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify(body)});return r.json();}
+// ========== FIREBASE ==========
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot, serverTimestamp, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyD1zkMjtZSR9IuiC8SjySeDXJUb2HtJTjo",
+  authDomain: "teamc-lelystad.firebaseapp.com",
+  projectId: "teamc-lelystad",
+  storageBucket: "teamc-lelystad.firebasestorage.app",
+  messagingSenderId: "933982851170",
+  appId: "1:933982851170:web:d47ffabc09ad594120c13b"
+};
+
+const fbApp = initializeApp(firebaseConfig);
+const db = getFirestore(fbApp);
 
 function setLoading(msg){
   const el=document.getElementById('loading-bar');
@@ -749,41 +760,68 @@ function setLoading(msg){
   el.style.display=msg?'flex':'none';
 }
 
-function normalizeTask(t){
-  const techsRaw=t['técnicosAsignados']||t.tecnicosAsignados||'';
-  const techs=techsRaw?techsRaw.split(',').map(x=>x.trim()).filter(Boolean):[];
-  const estado=t.estado||'pending';
-  const zona=t.zona||'';
-  return {
-    id:t.id||'',
-    woid:t['woReferencia']||t.id||'',
-    title:t['descripción']||t.descripcion||'',
-    techs,
-    status:estado==='Pending'?'pending':estado,
-    source:t.origen||'',
-    note:t['notasObservaciones']||'',
-    zones:zona?[zona]:[],
-    prio:(t.prioridad||'media').toLowerCase(),
-    turno:t.turno||'',
-    cerradaPor:t.cerradaPor||'',
-  };
+// ── Firebase helpers ──
+async function fbGetTasks(){
+  const snap=await getDocs(collection(db,'tasks'));
+  return snap.docs.map(d=>({...d.data(), _fbId:d.id}));
 }
 
-function normalizePlanning(p){
-  // Apps Script camelCases the headers, dates become e.g. "0205","0305" etc.
-  // Try multiple possible key formats
-  function d(keys){for(const k of keys){if(p[k]!==undefined)return p[k];}return'—';}
+async function fbAddTask(data){
+  const ref=await addDoc(collection(db,'tasks'),{...data, createdAt:serverTimestamp(), updatedAt:serverTimestamp()});
+  return ref.id;
+}
+
+async function fbUpdateTask(fbId, data){
+  await updateDoc(doc(db,'tasks',fbId),{...data, updatedAt:serverTimestamp()});
+}
+
+async function fbDeleteTask(fbId){
+  await deleteDoc(doc(db,'tasks',fbId));
+}
+
+async function fbAddHistory(data){
+  await addDoc(collection(db,'history'),{...data, timestamp:serverTimestamp()});
+}
+
+// ── Real-time listener ──
+let _unsubscribe=null;
+function startRealtimeSync(){
+  if(_unsubscribe) _unsubscribe();
+  _unsubscribe=onSnapshot(collection(db,'tasks'), snap=>{
+    const remoteTasks=snap.docs.map(d=>({...d.data(),_fbId:d.id}));
+    // Merge remote into TASKS without losing local-only state
+    remoteTasks.forEach(remote=>{
+      const existing=TASKS.find(t=>t._fbId===remote._fbId);
+      if(existing){
+        Object.assign(existing, normalizeFirebaseTask(remote));
+      } else {
+        TASKS.push(normalizeFirebaseTask(remote));
+      }
+    });
+    // Remove tasks deleted remotely
+    for(let i=TASKS.length-1;i>=0;i--){
+      if(TASKS[i]._fbId&&!remoteTasks.find(r=>r._fbId===TASKS[i]._fbId)){
+        TASKS.splice(i,1);
+      }
+    }
+    renderTasksView();
+  });
+}
+
+function normalizeFirebaseTask(t){
   return {
-    name:p['técnico']||p.tecnico||p['Técnico']||'',
-    days:[
-      d(['0205','02/05','día1','dia1']),
-      d(['0305','03/05','día2','dia2']),
-      d(['0405','04/05','día3','dia3']),
-      d(['2504','25/04','día4','dia4']),
-      d(['2804','28/04','día5','dia5']),
-      d(['1804','18/04','día6','dia6']),
-    ],
-    zone:p['zonaPrincipal']||p.zonaPrincipal||p.zona||'—',
+    id:       t._fbId||t.id||'',
+    _fbId:    t._fbId||'',
+    woid:     t.woid||t._fbId||'',
+    title:    t.title||t.titulo||'',
+    techs:    Array.isArray(t.techs)?t.techs:(t.techs?t.techs.split(',').map(x=>x.trim()).filter(Boolean):[]),
+    status:   t.status||t.estado||'pending',
+    source:   t.source||t.origen||'',
+    note:     t.note||t.nota||'',
+    zones:    Array.isArray(t.zones)?t.zones:(t.zone?[t.zone]:[]),
+    prio:     (t.prio||t.prioridad||'media').toLowerCase(),
+    turno:    t.turno||'',
+    isNew:    false,
   };
 }
 
@@ -880,22 +918,21 @@ async function saveNewTask(){
   renderTasksView();
   openModal(localId);
 
-  // Save to sheet in background
+  // Save to Firebase in background
   try{
-    setLoading('Guardando tarea en sheet...');
-    const res=await apiPost({action:'createTarea',data:{
-      titulo:desc, nota, zona:newTaskZone, prioridad:newTaskPrio,
-      estado:'Pending', turno, fechaCreacion:fecha,
-    }});
-    if(res.ok){
-      localTask.id=res.id;
-      localTask.woid=res.id;
-      localTask.isNew=false;
-      // Update woid in modal if still open
-      const woidEl=document.getElementById('m-woid');
-      if(woidEl&&selectedTask===localTask) woidEl.textContent='#'+res.id;
-    }
-  }catch(e){console.warn('Sheet save failed:',e);}
+    setLoading('Guardando...');
+    const fbId=await fbAddTask({
+      title:desc, note, zone:newTaskZone, zones:newTaskZone?[newTaskZone]:[],
+      prio:newTaskPrio, status:'pending', techs:[], source:'', turno, fecha,
+      woid:'NEW',
+    });
+    localTask._fbId=fbId;
+    localTask.id=fbId;
+    localTask.woid=fbId.slice(-6).toUpperCase();
+    localTask.isNew=false;
+    const woidEl=document.getElementById('m-woid');
+    if(woidEl&&selectedTask===localTask) woidEl.textContent='#'+localTask.woid;
+  }catch(e){console.warn('Firebase save failed:',e);}
   finally{setLoading('');}
 }
 
@@ -920,8 +957,9 @@ async function toggleAssign(name){
   markDirty();
 
   try{
-    if(!selectedTask.isNew)
-      await apiPost({action:'updateTarea',id:selectedTask.id,data:{techs:selectedTask.techs}});
+    const fbId=selectedTask._fbId||selectedTask.id;
+    if(!selectedTask.isNew&&fbId&&!String(fbId).startsWith('LOCAL'))
+      await fbUpdateTask(fbId,{techs:selectedTask.techs});
   }catch(e){console.warn('Assign save failed:',e);}
 }
 
@@ -943,28 +981,18 @@ function updateClock(){
 }
 updateClock();setInterval(updateClock,1000);
 
-// ========== INIT — load from Google Sheets ==========
+// ========== INIT — Firebase ==========
 async function initApp(){
-  setLoading('Conectando con Google Sheets...');
+  setLoading('Conectando con Firebase...');
   try{
-    // Load tareas
-    const rawTareas = await apiGet('getTareas');
-    const validTareas = Array.isArray(rawTareas)
-      ? rawTareas.filter(t=>t.id&&!t.id.startsWith('ℹ'))
-      : [];
+    const remoteTasks = await fbGetTasks();
     TASKS.length=0;
-    validTareas.forEach((t,i)=>{const n=normalizeTask(t);n._idx=i;TASKS.push(n);});
-
-    setLoading('Cargando planning...');
-    // Load planning
-    const rawPlanning = await apiGet('getPlanning');
-    if(Array.isArray(rawPlanning)&&rawPlanning.length>0){
-      PLANNING.length=0;
-      rawPlanning.filter(p=>p['técnico']||p.tecnico).forEach(p=>PLANNING.push(normalizePlanning(p)));
-    }
+    remoteTasks.forEach(t=>TASKS.push(normalizeFirebaseTask(t)));
+    setLoading('');
+    // Start real-time sync
+    startRealtimeSync();
   }catch(e){
-    console.warn('API load failed, using local data:',e);
-  }finally{
+    console.warn('Firebase load failed, using local data:',e);
     setLoading('');
   }
   renderTasksView();
@@ -1090,8 +1118,12 @@ function quickDelete(id){
   const t=TASKS.find(x=>String(x.id)===String(id));
   if(!t)return;
   if(!confirm(`¿Eliminar "${t.title||'tarea sin título'}"?`))return;
+  const fbId=t._fbId||t.id;
   TASKS.splice(TASKS.indexOf(t),1);
   renderTasksView();
+  if(fbId&&!String(fbId).startsWith('LOCAL')){
+    fbDeleteTask(fbId).catch(e=>console.warn('Delete failed:',e));
+  }
 }
 
 function renderSS(){
@@ -1769,38 +1801,52 @@ async function saveTaskEdits(){
   try{
     setLoading('Guardando...');
     if(isNew){
-      // Create new in sheet
-      const res=await apiPost({action:'createTarea',data:{
-        titulo: selectedTask.title,
-        nota:   selectedTask.note,
-        zona:   selectedTask.zones[0]||'',
-        prioridad: selectedTask.prio,
-        estado: selectedTask.status==='pending'?'Pending':selectedTask.status,
+      // Create in Firebase
+      const fbData={
+        title:    selectedTask.title,
+        note:     selectedTask.note,
+        zone:     selectedTask.zones[0]||'',
+        zones:    selectedTask.zones,
+        prio:     selectedTask.prio,
+        status:   selectedTask.status,
+        techs:    selectedTask.techs,
+        source:   selectedTask.source||'',
         turno,
-        fechaCreacion: fecha,
-      }});
-      if(res.ok){
-        selectedTask.id=res.id;
-        selectedTask.woid=res.id;
-        selectedTask.isNew=false;
-        const woidEl=document.getElementById('m-woid');
-        if(woidEl) woidEl.textContent='#'+res.id;
-      }
+        woid:     'NEW',
+        fecha,
+      };
+      const fbId=await fbAddTask(fbData);
+      selectedTask._fbId=fbId;
+      selectedTask.id=fbId;
+      selectedTask.woid=fbId.slice(-6).toUpperCase();
+      selectedTask.isNew=false;
+      const woidEl=document.getElementById('m-woid');
+      if(woidEl) woidEl.textContent='#'+selectedTask.woid;
     } else {
-      // Update existing
-      await apiPost({action:'updateEstado', id:taskId, data:{
-        estado: selectedTask.status==='pending'?'Pending':selectedTask.status,
-        techs:  selectedTask.techs,
-        turno,
-        cambiadoPor:'TL',
-        comentario: selectedTask.note||'',
-      }});
-      await apiPost({action:'updateTarea', id:taskId, data:{
-        titulo: selectedTask.title,
-        zona:   selectedTask.zones[0]||'',
-        prioridad: selectedTask.prio,
-        nota:   selectedTask.note,
-      }});
+      // Update in Firebase
+      const fbId=selectedTask._fbId||selectedTask.id;
+      if(fbId&&!fbId.startsWith('LOCAL')){
+        const updateData={
+          title:   selectedTask.title,
+          note:    selectedTask.note,
+          zone:    selectedTask.zones[0]||'',
+          zones:   selectedTask.zones,
+          prio:    selectedTask.prio,
+          status:  selectedTask.status,
+          techs:   selectedTask.techs,
+          turno,
+        };
+        await fbUpdateTask(fbId, updateData);
+        // Write history
+        await fbAddHistory({
+          taskId:   fbId,
+          title:    selectedTask.title,
+          status:   selectedTask.status,
+          techs:    selectedTask.techs,
+          turno,
+          cambiadoPor:'TL',
+        });
+      }
     }
   }catch(e){console.warn('Save failed:',e);}
   finally{
@@ -1817,10 +1863,14 @@ let _savingOnClose=false;
 
 async function deleteTask(){
   if(!selectedTask)return;
-  if(!confirm(`¿Eliminar tarea "${selectedTask.title}"?`))return;
+  if(!confirm(`¿Eliminar tarea "${selectedTask.title||'sin título'}"?`))return;
+  const fbId=selectedTask._fbId||selectedTask.id;
   TASKS.splice(TASKS.indexOf(selectedTask),1);
   closeModal();
   renderTasksView();
+  if(fbId&&!String(fbId).startsWith('LOCAL')){
+    try{ await fbDeleteTask(fbId); }catch(e){ console.warn('Delete failed:',e); }
+  }
 }
 
 function closeModal(e){
