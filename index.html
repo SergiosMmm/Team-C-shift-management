@@ -746,7 +746,6 @@ const TECHS = [
   {name:'Sergio Benavides',zone:'FLEX',sub:'FLEX'},
   {name:'Guillermo Garcia',zone:'FLEX',sub:'FLEX'},
   {name:'Leonardo',       zone:'FP',  sub:'S FP'},
-  {name:'Manuela',        zone:'FP',  sub:'S FP'},
   {name:'Borisz M.',      zone:'GOH', sub:'S GOH'},
   {name:'Borja ruiz',     zone:'OSR', sub:'OSR'},
 ];
@@ -780,7 +779,7 @@ const SS_ZONES = {
   'GOH Area':  {color:'var(--goh)', techs:['Eduardo Sienes','Alejandro G.']},
   'FLEX':      {color:'var(--flex)',techs:['Raul R.','Jorge A.','Iago C.','Adrian B.','Marcos T.','Sergio Benavides','Guillermo Garcia']},
   'TL / SP / FLOW': {color:'var(--tl)', techs:['Sergio','Julio','Gonza','Sergio Santaella','Jose Manuel']},
-  'FP Silo':   {color:'var(--fp)',  techs:['Leonardo','Manuela']},
+  'FP Silo':   {color:'var(--fp)',  techs:['Leonardo']},
   'FP Area':   {color:'var(--fp)',  techs:['Borja S.','Paula S.','Sergio Cuco']},
   'OSR':       {color:'var(--osr)', techs:['Borja ruiz']},
   'Holidays / Sick': {color:'var(--dim)', techs:['Sebastian','Chema','Angel A']},
@@ -812,7 +811,6 @@ const PLANNING = [
   {name:'Chema',            days:['SICK','SICK','SICK','SICK','SICK','SICK'], zone:'—'},
   {name:'Jose Manuel',      days:['SP','SP','SP','SP','SP','SP'],             zone:'SP'},
   {name:'Leonardo',         days:['S FP','S FP','S FP','H','S FP','S FP'],   zone:'S FP'},
-  {name:'Manuela',          days:['S FP','S FP','—','—','—','—'],            zone:'S FP'},
 ];
 
 const CHECKLIST_ITEMS = [
@@ -1082,11 +1080,32 @@ updateClock();setInterval(updateClock,1000);
 async function initApp(){
   setLoading('Conectando con Firebase...');
   try{
+    // Load workers first — builds NAME_MAP dynamically
+    setLoading('Cargando trabajadores...');
+    const workersSnap = await getDocs(collection(db,'workers'));
+    if(!workersSnap.empty){
+      WORKERS.length=0;
+      workersSnap.forEach(d=>{
+        const w={...d.data(), _fbId:d.id};
+        WORKERS.push(w);
+        // Build NAME_MAP from Firebase data
+        if(w.name && w.shortName){
+          const key = w.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+          NAME_MAP[key] = w.shortName;
+          NAME_MAP[w.name.toLowerCase()] = w.shortName;
+        }
+      });
+      console.log('Workers loaded from Firebase:', WORKERS.length, '| NAME_MAP entries:', Object.keys(NAME_MAP).length);
+    } else {
+      console.log('No workers in Firebase, using local NAME_MAP');
+    }
+
+    // Load tasks
+    setLoading('Cargando tareas...');
     const remoteTasks = await fbGetTasks();
     TASKS.length=0;
     remoteTasks.forEach(t=>TASKS.push(normalizeFirebaseTask(t)));
     setLoading('');
-    // Start real-time sync
     startRealtimeSync();
   }catch(e){
     console.warn('Firebase load failed, using local data:',e);
@@ -1095,7 +1114,7 @@ async function initApp(){
   renderTasksView();
   renderSS();
   renderMP();
-  // Save backup of fixed planning (before any 5/2 additions)
+  // Save backup of fixed planning
   window._PLANNING_BACKUP = PLANNING.filter(p=>!p._is52).map(p=>({...p, days:[...p.days]}));
   console.log('PLANNING backup saved:', window._PLANNING_BACKUP.length, 'entries');
 }
@@ -1315,10 +1334,10 @@ const NAME_MAP = {
   "borja sánchez méndez": "Borja S.",
   "paula santurde martinez": "Paula S.",
   "paula santurde martínez": "Paula S.",
-  "maría manuela cervera león": "Manuela",
-  "maria manuela cervera leon": "Manuela",
-  "josé maría manzanera león": "Jose Manuel",
-  "jose maria manzanera leon": "Jose Manuel",
+  "maría manuela cervera león": "María Manuela Cervera León",
+  "maria manuela cervera leon": "María Manuela Cervera León",
+  "josé maría manzanera león": "Chema",
+  "jose maria manzanera leon": "Chema",
   "leonardo moreno quiroga": "Leonardo",
   "ángel adorna pacheco": "Angel A",
   "angel adorna pacheco": "Angel A",
@@ -2718,6 +2737,7 @@ function processXLSRows(rows){
 function buildPreview(entries){
   const shiftLabel={'M':'Morning','A':'Afternoon','N':'Night'}[pasteShift]||'Morning';
   const myEntries=entries.filter(e=>e.shift===pasteShift);
+  console.log('myEntries count:', myEntries.length, myEntries.map(e=>e.fullName));
 
   const myMapped=myEntries.map(e=>{
     const lower=e.fullName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
@@ -3021,9 +3041,10 @@ function renderMP(){
     if(th) th.textContent=h;
   });
 
-  // Staff fixed table
-  const rows=PLANNING.filter(p=>!q||p.name.toLowerCase().includes(q));
-  document.getElementById('mp-tbody').innerHTML=rows.map((p,ri)=>{
+  // Staff fixed table — exclude 5/2 dynamic entries
+  const rows=PLANNING.filter(p=>!p._is52&&(!q||p.name.toLowerCase().includes(q)));
+
+  function renderPlanningRow(p){
     const pi=PLANNING.indexOf(p);
     const td=todayData[p.name];
     let hoyCell='<span style="color:var(--dim);font-size:11px;">—</span>';
@@ -3046,7 +3067,29 @@ function renderMP(){
       <td style="font-family:'Roboto Mono',monospace;font-size:11px;">${p.role||''}</td>
       <td>${hoyCell}</td>
     </tr>`;
-  }).join('');
+  }
+
+  // Separate MT from PA using WORKERS data
+  const PA_ZONES=['SP','S FP','S GOH'];
+  function isPA(p){
+    if(PA_ZONES.includes(p.zone)) return true;
+    const w=WORKERS.find(w=>NAME_MAP[w.name.toLowerCase()]===p.name||w.name===p.name);
+    return w&&w.location==='Production Assistant';
+  }
+
+  const mtRows=rows.filter(p=>!isPA(p));
+  const paRows=rows.filter(p=>isPA(p));
+
+  let tbodyHtml='';
+  if(mtRows.length){
+    tbodyHtml+=`<tr><td colspan="10" style="padding:5px 12px;font-size:10px;font-weight:600;letter-spacing:.07em;color:var(--muted);font-family:'Roboto Mono',monospace;text-transform:uppercase;background:var(--s2);">Maintenance Technicians (${mtRows.length})</td></tr>`;
+    tbodyHtml+=mtRows.map(renderPlanningRow).join('');
+  }
+  if(paRows.length){
+    tbodyHtml+=`<tr><td colspan="10" style="padding:5px 12px;font-size:10px;font-weight:600;letter-spacing:.07em;color:var(--muted);font-family:'Roboto Mono',monospace;text-transform:uppercase;background:var(--s2);">Production Assistants (${paRows.length})</td></tr>`;
+    tbodyHtml+=paRows.map(renderPlanningRow).join('');
+  }
+  document.getElementById('mp-tbody').innerHTML=tbodyHtml;
 
   // Hide extras section (no longer used)
   document.getElementById('mp-extras-section').style.display='none';
@@ -3056,11 +3099,12 @@ function renderMP(){
   const s52Tbody=document.getElementById('mp-52-tbody');
   if(pasteApplied&&today52.length){
     s52Section.style.display='block';
-    s52Tbody.innerHTML=today52.map((e,i)=>{
+    // Separate Maintenance Technicians from Production Assistants
+    function render52Row(e,i){
       const planRow=PLANNING.find(p=>p.name===e.shortName||p._fullName===e.fullName);
       const zone=planRow?.zone||'';
       return`<tr style="${zone?'':'background:rgba(245,158,11,.05)'}">
-        <td>${e.fullName}${e.shortName&&e.shortName!==e.fullName?` <span style="font-size:10px;color:var(--muted);">(${e.shortName})</span>`:''}</td>
+        <td>${e.fullName}${e.shortName&&e.shortName!==e.fullName&&e.shortName!==e.fullName?` <span style="font-size:10px;color:var(--muted);">(${e.shortName})</span>`:''}</td>
         <td>
           <select class="extras-zone-sel" onchange="set52Zone(${i},this.value)">
             <option value="">— asignar zona —</option>
@@ -3069,7 +3113,28 @@ function renderMP(){
         </td>
         <td style="font-family:'Roboto Mono',monospace;font-size:11px;color:var(--muted);">${e.time}</td>
       </tr>`;
-    }).join('');
+    }
+
+    // Split by role using WORKERS data
+    const mechs=today52.filter(e=>{
+      const w=WORKERS.find(w=>w.name===e.fullName);
+      return !w||w.location==='Maintenance Technician'||!w.location||w.team==='Team 1'||w.team==='Team 2';
+    });
+    const pas=today52.filter(e=>{
+      const w=WORKERS.find(w=>w.name===e.fullName);
+      return w&&w.location==='Production Assistant';
+    });
+
+    let html52='';
+    if(mechs.length){
+      html52+=`<tr><td colspan="3" style="padding:6px 12px;font-size:10px;font-weight:600;letter-spacing:.07em;color:var(--muted);font-family:'Roboto Mono',monospace;text-transform:uppercase;background:var(--s2);">Maintenance Technicians (${mechs.length})</td></tr>`;
+      html52+=mechs.map((e,i)=>render52Row(e,today52.indexOf(e))).join('');
+    }
+    if(pas.length){
+      html52+=`<tr><td colspan="3" style="padding:6px 12px;font-size:10px;font-weight:600;letter-spacing:.07em;color:var(--muted);font-family:'Roboto Mono',monospace;text-transform:uppercase;background:var(--s2);">Production Assistants (${pas.length})</td></tr>`;
+      html52+=pas.map((e,i)=>render52Row(e,today52.indexOf(e))).join('');
+    }
+    s52Tbody.innerHTML=html52;
   } else {
     s52Section.style.display='none';
   }
