@@ -1325,8 +1325,8 @@ const NAME_MAP = {
   "borisz mackovic": "Borisz M.",
   "borja ruiz lópez": "Borja ruiz",
   "borja ruiz lopez": "Borja ruiz",
-  "carlos ricardo cuello garcía": "Carlos R C",
-  "carlos ricardo cuello garcia": "Carlos R C",
+  "carlos ricardo cuello garcía": "Carlos R.C.",
+  "carlos ricardo cuello garcia": "Carlos R.C.",
   "josé manuel peinado lópez": "Jose Manuel",
   "jose manuel peinado lopez": "Jose Manuel",
   "david bernal irigoyen": "David Bernal Irigoyen",
@@ -2603,7 +2603,7 @@ function togglePaste(){
   const body=document.getElementById('paste-body');
   body.classList.toggle('hidden');
   if(!body.classList.contains('hidden'))
-    setTimeout(()=>document.getElementById('paste-input').focus(),100);
+    setTimeout(()=>document.getElementById('xls-input')?.focus(),100);
 }
 
 let pasteShift='M'; // default Morning
@@ -2777,12 +2777,23 @@ function applyPasteMorning(){
   if(!window.pasteMorning) return;
   const shiftLabel=window.pasteShiftLabel||'Morning';
   const allEntries=window.pasteAllEntries||[];
-  // Build staffNames from fixed staff (never from _is52 entries)
-  // Use backup if available as it's guaranteed to have correct names
+  // Build staffNames from fixed staff using backup
   const fixedStaff = window._PLANNING_BACKUP && window._PLANNING_BACKUP.length > 0
     ? window._PLANNING_BACKUP
     : PLANNING.filter(p=>!p._is52);
   const staffNames = new Set(fixedStaff.map(p=>p.name).filter(Boolean));
+  // Also build a normalized lookup for fuzzy matching
+  const staffNamesNorm = new Map();
+  fixedStaff.forEach(p=>{
+    if(p.name) staffNamesNorm.set(p.name.toLowerCase().replace(/[.\s]/g,''), p.name);
+  });
+  function inStaff(shortName){
+    if(!shortName) return false;
+    if(staffNames.has(shortName)) return true;
+    // Try normalized comparison (ignore dots and spaces)
+    const norm = shortName.toLowerCase().replace(/[.\s]/g,'');
+    return staffNamesNorm.has(norm);
+  }
   console.log('staffNames built from:', fixedStaff.length, 'entries, size:', staffNames.size, [...staffNames].slice(0,5));
 
   // Reset — remove only previously added 5/2 entries, never touch fixed staff
@@ -2812,10 +2823,7 @@ function applyPasteMorning(){
 
   // 1. Process STAFF in my shift — update todayData
   window.pasteMorning.forEach(e=>{
-    if(!e.shortName||!staffNames.has(e.shortName)){
-      if(e.shortName) console.log('NOT IN STAFF:', e.shortName, '| staffNames has:', [...staffNames].filter(n=>n.toLowerCase().includes(e.shortName.toLowerCase().split(' ')[0].toLowerCase())));
-      return;
-    }
+    if(!e.shortName||!inStaff(e.shortName)) return;
     const planRow=PLANNING.find(p=>p.name===e.shortName);
     todayData[e.shortName]={shift:pasteShift, time:e.time, zone:e.zone||planRow?.zone||''};
     if(e.zone&&planRow) planRow.zone=e.zone;
@@ -2827,7 +2835,7 @@ function applyPasteMorning(){
     if(e.shift!==pasteShift) return false;
     const mapped=nameMap[e.fullName];
     const shortName=mapped?.shortName||e.fullName;
-    return !staffNames.has(shortName);
+    return !inStaff(shortName);
   }).forEach(e=>{
     const shortName=nameMap[e.fullName]?.shortName||e.fullName;
     if(seen52.has(shortName)) return; // prevent duplicates
@@ -2852,7 +2860,7 @@ function applyPasteMorning(){
   allEntries.filter(e=>e.shift==='HOL'||e.shift==='SICK').forEach(e=>{
     const mapped=nameMap[e.fullName];
     const shortName=mapped?.shortName||'';
-    if(staffNames.has(shortName)){
+    if(inStaff(shortName)){
       todayData[shortName]={shift:e.shift, time:'', zone:''};
     }
   });
