@@ -1279,30 +1279,27 @@ function processXLSRows(rows){
     '05:45':'M','06:00':'M',
     '13:45':'A','14:00':'A',
     '21:45':'N','22:00':'N',
-    '08:30':'NEN','09:00':'NEN',
+    '08:00':'DAY','08:30':'DAY','09:00':'DAY',
     '00:00':'HOL'
   };
-  const SKIP=['Shifts Team','Employees','Tabla de cobertura','Shifts','Total hours',
-              'Holidays','NExt','Training','Maintenance Technician','Production Assistant',
-              'Team Leader','JV Test'];
   const entries=[];
 
   for(const row of rows){
     const nameRaw=String(row[0]||'').replace(/\n/g,' ').trim();
     const timeRaw=String(row[1]||'').replace(/\n/g,' ').trim();
-    if(!nameRaw||SKIP.some(s=>nameRaw.startsWith(s))) continue;
+    if(!nameRaw||SKIP.some(s=>nameRaw.startsWith(s))||isJunk(nameRaw)) continue;
 
-    // Extract all times, ignore 00:00-00:00 placeholder
     const allTimes=[...timeRaw.matchAll(/\d{2}:\d{2}-\d{2}:\d{2}/g)].map(m=>m[0]);
     const realTime=allTimes.find(t=>t!=='00:00-00:00')||'';
     const onlyHol=allTimes.length>0&&!realTime&&allTimes[0]==='00:00-00:00';
 
-    let shift='52';
-    if(realTime){
-      shift=SHIFT_MAP[realTime.slice(0,5)]||'?';
-    }
+    let shift=null;
+    if(realTime) shift=SHIFT_MAP[realTime.slice(0,5)]||'DAY';
     if(onlyHol||/hol|vacation/i.test(timeRaw)) shift='HOL';
     if(/sick|baja/i.test(timeRaw)) shift='SICK';
+
+    // No time = not working today, skip
+    if(!shift) continue;
 
     entries.push({fullName:nameRaw, shift, time:realTime, annotation:timeRaw});
   }
@@ -1335,8 +1332,8 @@ function buildPreview(entries){
     return{fullName:e.fullName,shortName:short||'',zone:planRow?.zone||'',time:e.time,mapped:!!short};
   });
 
-  const extrasCount=entries.filter(e=>e.shift!==pasteShift&&e.shift!=='H'&&e.shift!=='SICK'&&e.shift!=='52'&&e.shift!=='HOL'&&e.shift!=='?').length;
-  const s52Count=entries.filter(e=>e.shift==='52').length;
+  const extrasCount=entries.filter(e=>e.shift!==pasteShift&&e.shift!=='H'&&e.shift!=='SICK'&&e.shift!=='HOL'&&e.shift!=='DAY').length;
+  const dayCount=entries.filter(e=>e.shift==='DAY').length;
 
   const result=document.getElementById('paste-result');
   result.classList.remove('hidden');
@@ -1463,12 +1460,21 @@ function applyPasteMorning(){
     today52.push({fullName:e.fullName, shortName, time:e.time, team, location});
   });
 
-  // 3. People with no shift (52) = L-V fixed schedule workers
-  allEntries.filter(e=>e.shift==='52').forEach(e=>{
+  // 3. DAY shift workers (emergency/special) = treat as extras
+  allEntries.filter(e=>e.shift==='DAY').forEach(e=>{
     const shortName=nameMap[e.fullName]?.shortName||e.fullName;
     if(seen52.has(shortName)) return;
     seen52.add(shortName);
-    today52.push({fullName:e.fullName, shortName, time:'L–V', team:'', location:''});
+    const workerInfo=WORKERS.find(w=>w.name===e.fullName);
+    const team=workerInfo?.team||'';
+    const location=workerInfo?.location||'';
+    const existing=PLANNING.find(p=>p.name===shortName||p._fullName===e.fullName);
+    if(!existing){
+      PLANNING.push({name:shortName,days:['—','—','—','—','—','—'],zone:'',
+        role:location||team||'DAY',_is52:true,_isExtra:true,_fullName:e.fullName,_team:team,_location:location});
+    }
+    todayData[shortName]={shift:'DAY',time:e.time,zone:''};
+    today52.push({fullName:e.fullName,shortName,time:e.time,team,location});
   });
 
   // 3. No-shift entries (empty column B) = not working today → ignore
