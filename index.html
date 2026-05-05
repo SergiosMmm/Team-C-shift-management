@@ -1207,8 +1207,7 @@ function selPrio(p, el){
   el.className=`prio-btn sel-${p}`;
 }
 function closeSheet(e){
-  if(false)
-    
+  // sheet-bg removed — no-op
 }
 
 window.selZone=selZone;
@@ -1240,8 +1239,6 @@ const WORKERS = [];
 function togglePaste(){
   const body=document.getElementById('paste-body');
   body.classList.toggle('hidden');
-  if(!body.classList.contains('hidden'))
-    
 }
 
 let pasteShift='M'; // default Morning
@@ -2200,6 +2197,8 @@ async function fixWorkerShortNames(){
   alert(`✓ ${updated} workers actualizados en Firebase. Recarga la app.`);
 }
 window.fixWorkerShortNames=fixWorkerShortNames;
+
+async function importWorkersToFirebase(){
   const btn=document.getElementById('btn-import-workers');
   const status=document.getElementById('import-status');
   btn.disabled=true;
