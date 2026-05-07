@@ -484,7 +484,7 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
   <div class="mp-wrap" style="margin-bottom:16px;">
     <table class="mp-table" id="mp-table-fixed">
       <thead><tr id="mp-thead-row">
-        <th style="min-width:160px;">Técnico</th>
+        <th style="min-width:160px;"></th>
         <th id="th-0" style="min-width:70px;">—</th>
         <th id="th-1" style="min-width:70px;">—</th>
         <th id="th-2" style="min-width:70px;">—</th>
@@ -1533,7 +1533,6 @@ function applyPasteMorning(){
   if(!window._shiftDays) window._shiftDays=getPlanHeaders();
   window._shiftDays[colIdx]=dateStr;
   window._activeColIdx=colIdx; // track for highlighting
-  window._activeColIdx=colIdx; // track for highlighting
 
   // Update that column in PLANNING with today's zone for each staff member
   PLANNING.filter(p=>!p._is52).forEach(p=>{
@@ -1830,8 +1829,9 @@ function resetPlanning(){
     p.days=[defaultZone,defaultZone,defaultZone,defaultZone,defaultZone,defaultZone];
   });
 
-  // Reset date headers
+  // Reset date headers and active column
   window._shiftDays=null;
+  window._activeColIdx=null;
 
   // Reset today data
   todayData={};
@@ -2141,7 +2141,15 @@ function setTeamFilter(f, el){
 
 function renderWorkers(){
   const q=document.getElementById('workers-search').value.toLowerCase();
-  const filtered=WORKERS.filter(w=>{
+  // Merge static WORKERS with dynamic extras from today's planning
+  const dynamicExtras=PLANNING.filter(p=>p._is52&&p._fullName).map(p=>({
+    name:p._fullName, team:p._team||'Extra', phone:'', email:'',
+    location:p._location||p.role||'Extra', zone:p.zone||'', shortName:p.name,
+    _isDynamic:true
+  }));
+  const allWorkers=[...WORKERS, ...dynamicExtras.filter(e=>!WORKERS.find(w=>w.name===e.name))];
+
+  const filtered=allWorkers.filter(w=>{
     const mq=!q||w.name.toLowerCase().includes(q)||(w.phone||'').includes(q);
     const mt=teamFilter==='all'||
       (teamFilter==='other'&&!['Team C','Team 1','Team 2'].includes(w.team))||
