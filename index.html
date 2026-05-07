@@ -174,6 +174,7 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
 .hoy-present{background:var(--flex-bg);color:var(--flex);}
 .hoy-absent{background:var(--sick-bg);color:var(--sick);}
 .hoy-hol{background:var(--s2);color:var(--muted);}
+.active-col{background:rgba(86,211,100,.06)!important;border-left:2px solid rgba(86,211,100,.3);border-right:2px solid rgba(86,211,100,.3);}
 .alert-box{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:var(--r-sm);padding:10px 14px;margin-bottom:8px;font-size:12px;display:flex;align-items:flex-start;gap:8px;color:var(--osr);}
 .extras-zone-sel{background:var(--s2);border:1px solid var(--border);border-radius:4px;padding:3px 7px;font-size:12px;color:var(--text);outline:none;cursor:pointer;font-family:'Source Sans 3',sans-serif;}
 .mp-name{font-weight:500;}
@@ -741,11 +742,12 @@ const SS_ZONES = {
   'GOH Silo': {color:'var(--goh)', techs:['Juan Suárez','Borisz M.']},
   'GOH Area':  {color:'var(--goh)', techs:['Eduardo Sienes','Alejandro G.']},
   'FLEX':      {color:'var(--flex)',techs:['Raul R.','Jorge A.','Iago C.','Adrian B.','Marcos T.','Sergio Benavides','Guillermo Garcia']},
-  'TL / SP / FLOW': {color:'var(--tl)', techs:['Sergio','Julio','Gonza','Sergio Santaella','Jose Manuel']},
+  'TL':        {color:'var(--tl)', techs:['Sergio','Julio','Gonza']},
+  'SP / FLOW': {color:'var(--osr)', techs:['Sergio Santaella','Jose Manuel','Angel A']},
   'FP Silo':   {color:'var(--fp)',  techs:['Leonardo']},
   'FP Area':   {color:'var(--fp)',  techs:['Borja S.','Paula S.','Sergio Cuco']},
   'OSR':       {color:'var(--osr)', techs:['Borja ruiz']},
-  'Holidays / Sick': {color:'var(--dim)', techs:['Sebastian','Chema','Angel A']},
+  'Holidays / Sick': {color:'var(--dim)', techs:['Sebastian','Chema']},
 };
 
 const PLANNING = [
@@ -1143,26 +1145,35 @@ function quickDelete(id){
 
 function renderSS(){
   const zones=[
-    {name:'TL / SP / FLOW', color:'var(--tl)',  techs:SS_ZONES['TL / SP / FLOW'].techs},
-    {name:'FLEX',           color:'var(--flex)', techs:SS_ZONES['FLEX'].techs},
-    {name:'FP Area',        color:'var(--fp)',   techs:SS_ZONES['FP Area'].techs},
-    {name:'GOH Area',       color:'var(--goh)',  techs:SS_ZONES['GOH Area'].techs},
-    {name:'GOH Silo',       color:'var(--goh)',  techs:SS_ZONES['GOH Silo'].techs},
-    {name:'FP Silo',        color:'var(--fp)',   techs:SS_ZONES['FP Silo'].techs},
-    {name:'OSR',            color:'var(--osr)',  techs:SS_ZONES['OSR'].techs},
-    {name:'Hols / Sick',    color:'var(--dim)',  techs:SS_ZONES['Holidays / Sick'].techs},
+    {name:'TL',        color:'var(--tl)',   techs:SS_ZONES['TL'].techs},
+    {name:'SP / FLOW', color:'var(--osr)',  techs:SS_ZONES['SP / FLOW'].techs},
+    {name:'FLEX',      color:'var(--flex)', techs:SS_ZONES['FLEX'].techs},
+    {name:'FP Area',   color:'var(--fp)',   techs:SS_ZONES['FP Area'].techs},
+    {name:'GOH Area',  color:'var(--goh)',  techs:SS_ZONES['GOH Area'].techs},
+    {name:'GOH Silo',  color:'var(--goh)',  techs:SS_ZONES['GOH Silo'].techs},
+    {name:'FP Silo',   color:'var(--fp)',   techs:SS_ZONES['FP Silo'].techs},
+    {name:'OSR',       color:'var(--osr)',  techs:SS_ZONES['OSR'].techs},
+    {name:'Hols / Sick',color:'var(--dim)',techs:SS_ZONES['Holidays / Sick'].techs},
   ];
 
-  const total=Object.values(SS_ZONES).reduce((a,z)=>a+z.techs.length,0);
+  // Counters
+  const mechZones=['FLEX','FP Area','FP Silo','GOH Area','GOH Silo','OSR'];
+  const paZones=['SP / FLOW'];
   const gohT=SS_ZONES['GOH Silo'].techs.length+SS_ZONES['GOH Area'].techs.length;
   const fpT=SS_ZONES['FP Silo'].techs.length+SS_ZONES['FP Area'].techs.length;
   const flexT=SS_ZONES['FLEX'].techs.length;
+  const mechT=mechZones.reduce((a,z)=>a+(SS_ZONES[z]?.techs.length||0),0);
+  const tlT=SS_ZONES['TL'].techs.length;
+  const paT=SS_ZONES['SP / FLOW'].techs.length;
+  const total=Object.values(SS_ZONES).reduce((a,z)=>a+z.techs.length,0);
 
   document.getElementById('ss-totals').innerHTML=`
     <div class="ss-chip"><span class="ss-chip-num">${total}</span> en turno</div>
-    <div class="ss-chip" style="border-color:var(--goh)"><span class="ss-chip-num" style="color:var(--goh)">${gohT}</span> GOH</div>
-    <div class="ss-chip" style="border-color:var(--fp)"><span class="ss-chip-num" style="color:var(--fp)">${fpT}</span> FP</div>
-    <div class="ss-chip" style="border-color:var(--flex)"><span class="ss-chip-num" style="color:var(--flex)">${flexT}</span> FLEX</div>
+    <div class="ss-chip" style="border-color:var(--tl)"><span class="ss-chip-num" style="color:var(--tl)">${tlT}</span> TL</div>
+    <div class="ss-chip" style="border-color:var(--muted)"><span class="ss-chip-num" style="color:var(--muted)">${mechT}</span> MT
+      <span style="font-size:11px;color:var(--dim);">(GOH ${gohT} · FP ${fpT} · FLEX ${flexT})</span>
+    </div>
+    <div class="ss-chip" style="border-color:var(--osr)"><span class="ss-chip-num" style="color:var(--osr)">${paT}</span> PA</div>
   `;
 
   const tableRows=zones.map(z=>{
@@ -1281,6 +1292,13 @@ const XLS_SKIP=['Shifts Team','Employees','Tabla de cobertura','Shifts','Total h
 function isJunk(name){ return name.length<=4&&/^[A-Z]/.test(name)&&!/[a-záéíóúüñ]/.test(name); }
 
 function processXLSRows(rows){
+  // Extract date from XLS header row 0: "Shifts Team - Schedule - 05/2026 - Generated: 05/07/2026 23:42"
+  const headerStr=String(rows[0]?.[0]||'');
+  const dateMatch=headerStr.match(/Generated:\s*(\d{2})\/(\d{2})\/(\d{4})/);
+  if(dateMatch){
+    window._xlsDate=dateMatch[2]+'/'+dateMatch[1]; // DD/MM
+  }
+
   const SHIFT_MAP={
     '05:45':'M','06:00':'M',
     '13:45':'A','14:00':'A',
@@ -1360,7 +1378,7 @@ function buildPreview(entries){
             <td style="padding:5px 10px;">
               <select style="background:var(--s2);border:1px solid var(--border);border-radius:4px;padding:3px 7px;font-size:12px;color:var(--text);outline:none;" onchange="pasteMorning[${i}].zone=this.value">
                 <option value="">—</option>
-                ${"FP,GOH,FLEX,OSR,TL,FLOW,SP,S FP,S GOH".split(',').map(z=>`<option value="${z}" ${e.zone===z?'selected':''}>${z}</option>`).join('')}
+                ${"FP,GOH,FLEX,OSR,TL,FLOW,SP,S FP,S GOH,SICK".split(',').map(z=>`<option value="${z}" ${e.zone===z?'selected':''}>${z}</option>`).join('')}
               </select>
             </td>
             <td style="padding:5px 10px;color:var(--muted);font-family:'Roboto Mono',monospace;">${e.time}</td>
@@ -1503,12 +1521,14 @@ function applyPasteMorning(){
   const isDay1=confirm(`Turno ${shiftLabel} — ¿qué día es?\n\nOK = Día 1\nCancelar = Día 2`);
   const colIdx=isDay1?cols[0]:cols[1];
 
-  // Update date header for that column
+  // Use date from XLS header, fallback to today
   const today=new Date();
   const pad=n=>String(n).padStart(2,'0');
-  const dateStr=pad(today.getDate())+'/'+pad(today.getMonth()+1);
+  const dateStr=window._xlsDate||(pad(today.getDate())+'/'+pad(today.getMonth()+1));
   if(!window._shiftDays) window._shiftDays=getPlanHeaders();
   window._shiftDays[colIdx]=dateStr;
+  window._activeColIdx=colIdx; // track for highlighting
+  window._activeColIdx=colIdx; // track for highlighting
 
   // Update that column in PLANNING with today's zone for each staff member
   PLANNING.filter(p=>!p._is52).forEach(p=>{
@@ -1549,7 +1569,7 @@ function updateSSFromToday(){
   const zoneToSS={
     'GOH':'GOH Area', 'FP':'FP Area', 'FLEX':'FLEX',
     'S GOH':'GOH Silo', 'S FP':'FP Silo', 'OSR':'OSR',
-    'TL':'TL / SP / FLOW', 'FLOW':'TL / SP / FLOW', 'SP':'TL / SP / FLOW',
+    'TL':'TL', 'FLOW':'SP / FLOW', 'SP':'SP / FLOW',
     'SICK':'Holidays / Sick', 'H':'Holidays / Sick',
   };
 
@@ -1664,7 +1684,7 @@ function render52Row(e,i){
           <span style="font-size:10px;color:var(--dim);">✎</span>
         </div>
       </td>
-      ${p.days.map((d,di)=>`<td class="editable" onclick="editCell(this,${pi},${di})"><span class="pill ${pillClass(d)}">${d}</span></td>`).join('')}
+      ${p.days.map((d,di)=>`<td class="editable${di===window._activeColIdx?' active-col':''}" onclick="editCell(this,${pi},${di})"><span class="pill ${pillClass(d)}">${d}</span></td>`).join('')}
       <td><span class="pill ${pillClass(p.zone)}">${p.zone}</span></td>
       <td style="font-family:'Roboto Mono',monospace;font-size:11px;">${p.role||''}</td>
       <td>${hoyCell}</td>
@@ -1678,7 +1698,11 @@ function renderMP(){
   // Update header cells
   headers.forEach((h,i)=>{
     const th=document.getElementById('th-'+i);
-    if(th) th.textContent=h;
+    if(th){
+      th.textContent=h;
+      th.style.background=i===window._activeColIdx?'rgba(86,211,100,.1)':'';
+      th.style.color=i===window._activeColIdx?'var(--flex)':'';
+    }
   });
 
   // Staff fixed table — exclude 5/2 dynamic entries
@@ -1706,23 +1730,19 @@ function renderMP(){
   }
   document.getElementById('mp-tbody').innerHTML=tbodyHtml;
 
-  // Hide extras section (no longer used)
-  document.getElementById('mp-extras-section').style.display='none';
-
   // 5/2 section — shown as separate table with editable zone
   const s52Section=document.getElementById('mp-52-section');
   const s52Tbody=document.getElementById('mp-52-tbody');
-  if(pasteApplied&&today52.filter(e=>e.time==='L–V').length){
-    const lv52=today52.filter(e=>e.time==='L–V');
+  if(pasteApplied&&today52.length){
     s52Section.style.display='block';
-    // Split by role using WORKERS data
-    const mechs=lv52.filter(e=>{
+    // Split by role: Maintenance Technicians first, then Production Assistants
+    const mechs=today52.filter(e=>{
       const w=WORKERS.find(w=>w.name===e.fullName);
-      return !w||w.location==='Maintenance Technician'||!w.location||w.team==='Team 1'||w.team==='Team 2';
+      return !w||w.location==='Maintenance Technician'||w.location==='Maintenance Tech'||!w.location||w.team==='Team 1'||w.team==='Team 2';
     });
-    const pas=lv52.filter(e=>{
+    const pas=today52.filter(e=>{
       const w=WORKERS.find(w=>w.name===e.fullName);
-      return w&&w.location==='Production Assistant';
+      return w&&(w.location==='Production Assistant'||w.location==='Prod. Assistant');
     });
 
     let html52='';
