@@ -491,8 +491,6 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
         <th id="th-3" style="min-width:70px;">—</th>
         <th id="th-4" style="min-width:70px;">—</th>
         <th id="th-5" style="min-width:70px;">—</th>
-        <th style="min-width:90px;">Zona</th>
-        <th style="min-width:80px;">Rol</th>
         <th style="min-width:70px;">Hoy</th>
       </tr></thead>
       <tbody id="mp-tbody"></tbody>
@@ -516,7 +514,7 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
 
   <!-- SECTION 3: 5/2 -->
   <div id="mp-52-section" style="display:none;">
-    <div class="mp-section-title" style="color:var(--muted);">Turno L–V <span style="font-family:'Roboto Mono',monospace;font-size:11px;opacity:.7;">(asigna zona para que aparezcan como disponibles)</span></div>
+    <div class="mp-section-title" style="color:var(--osr);">Extras en turno <span style="font-family:'Roboto Mono',monospace;font-size:11px;opacity:.7;">(asigna zona para que aparezcan como disponibles)</span></div>
     <div class="mp-wrap">
       <table class="mp-table">
         <thead><tr>
@@ -1435,16 +1433,21 @@ function applyPasteMorning(){
 
   console.log('PLANNING size after reset:', PLANNING.length, PLANNING.map(p=>p.name).slice(0,5));
 
-  // Build fullName → preview entry lookup
+  // Build fullName → preview entry lookup (includes zone edits from preview)
   const nameMap={};
   window.pasteMorning.forEach(e=>{ if(e.shortName) nameMap[e.fullName]=e; });
+
+  // Also build zone override map from preview edits
+  const previewZones={};
+  window.pasteMorning.forEach(e=>{ if(e.shortName&&e.zone) previewZones[e.shortName]=e.zone; });
 
   // 1. Process STAFF in my shift — update todayData
   window.pasteMorning.forEach(e=>{
     if(!e.shortName||!inStaff(e.shortName)) return;
     const planRow=PLANNING.find(p=>p.name===e.shortName);
-    todayData[e.shortName]={shift:pasteShift, time:e.time, zone:e.zone||planRow?.zone||''};
-    if(e.zone&&planRow) planRow.zone=e.zone;
+    const zone=e.zone||planRow?.zone||'';
+    todayData[e.shortName]={shift:pasteShift, time:e.time, zone};
+    if(zone&&planRow) planRow.zone=zone;
   });
 
   // 2. Everyone with MY SAME shift NOT in PLANNING:
@@ -1480,7 +1483,9 @@ function applyPasteMorning(){
         _location:location,
       });
     }
-    todayData[shortName]={shift:e.shift, time:e.time, zone:''};
+    const previewZone=previewZones[shortName]||'';
+    todayData[shortName]={shift:e.shift, time:e.time, zone:previewZone};
+    if(previewZone&&existing) existing.zone=previewZone;
     today52.push({fullName:e.fullName, shortName, time:e.time, team, location});
   });
 
@@ -1685,8 +1690,6 @@ function render52Row(e,i){
         </div>
       </td>
       ${p.days.map((d,di)=>`<td class="editable${di===window._activeColIdx?' active-col':''}" onclick="editCell(this,${pi},${di})"><span class="pill ${pillClass(d)}">${d}</span></td>`).join('')}
-      <td><span class="pill ${pillClass(p.zone)}">${p.zone}</span></td>
-      <td style="font-family:'Roboto Mono',monospace;font-size:11px;">${p.role||''}</td>
       <td>${hoyCell}</td>
     </tr>`;
   }
@@ -1721,11 +1724,11 @@ function renderMP(){
 
   let tbodyHtml='';
   if(mtRows.length){
-    tbodyHtml+=`<tr><td colspan="10" style="padding:5px 12px;font-size:10px;font-weight:600;letter-spacing:.07em;color:var(--muted);font-family:'Roboto Mono',monospace;text-transform:uppercase;background:var(--s2);">Maintenance Technicians (${mtRows.length})</td></tr>`;
+    tbodyHtml+=`<tr><td colspan="8" style="padding:5px 12px;font-size:10px;font-weight:600;letter-spacing:.07em;color:var(--muted);font-family:'Roboto Mono',monospace;text-transform:uppercase;background:var(--s2);">Maintenance Technicians (${mtRows.length})</td></tr>`;
     tbodyHtml+=mtRows.map(renderPlanningRow).join('');
   }
   if(paRows.length){
-    tbodyHtml+=`<tr><td colspan="10" style="padding:5px 12px;font-size:10px;font-weight:600;letter-spacing:.07em;color:var(--muted);font-family:'Roboto Mono',monospace;text-transform:uppercase;background:var(--s2);">Production Assistants (${paRows.length})</td></tr>`;
+    tbodyHtml+=`<tr><td colspan="8" style="padding:5px 12px;font-size:10px;font-weight:600;letter-spacing:.07em;color:var(--muted);font-family:'Roboto Mono',monospace;text-transform:uppercase;background:var(--s2);">Production Assistants (${paRows.length})</td></tr>`;
     tbodyHtml+=paRows.map(renderPlanningRow).join('');
   }
   document.getElementById('mp-tbody').innerHTML=tbodyHtml;
@@ -1819,9 +1822,12 @@ function resetPlanning(){
     if(TECHS[i]._is52) TECHS.splice(i,1);
   }
 
-  // Reset days to '—' for all fixed staff
+  // Reset days to default zone for fixed staff
   PLANNING.forEach(p=>{
-    p.days=['—','—','—','—','—','—'];
+    if(p._is52) return;
+    // Use the tech's known default zone
+    const defaultZone=p.zone&&p.zone!=='—'?p.zone:'—';
+    p.days=[defaultZone,defaultZone,defaultZone,defaultZone,defaultZone,defaultZone];
   });
 
   // Reset date headers
