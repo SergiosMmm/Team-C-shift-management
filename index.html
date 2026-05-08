@@ -1154,24 +1154,28 @@ function renderSS(){
     {name:'Hols / Sick',color:'var(--dim)',techs:SS_ZONES['Holidays / Sick'].techs},
   ];
 
-  // Counters
-  const mechZones=['FLEX','FP Area','FP Silo','GOH Area','GOH Silo','OSR'];
-  const paZones=['SP / FLOW'];
-  const gohT=SS_ZONES['GOH Silo'].techs.length+SS_ZONES['GOH Area'].techs.length;
-  const fpT=SS_ZONES['FP Silo'].techs.length+SS_ZONES['FP Area'].techs.length;
+  // Counters — MT = FLEX+FP Area+GOH Area, PA = FP Silo+GOH Silo+OSR+SP/FLOW
+  const gohMT=SS_ZONES['GOH Area'].techs.length;
+  const fpMT=SS_ZONES['FP Area'].techs.length;
   const flexT=SS_ZONES['FLEX'].techs.length;
-  const mechT=mechZones.reduce((a,z)=>a+(SS_ZONES[z]?.techs.length||0),0);
+  const mechT=gohMT+fpMT+flexT;
   const tlT=SS_ZONES['TL'].techs.length;
-  const paT=SS_ZONES['SP / FLOW'].techs.length;
+  const paFP=SS_ZONES['FP Silo'].techs.length;
+  const paGOH=SS_ZONES['GOH Silo'].techs.length;
+  const paOSR=SS_ZONES['OSR'].techs.length;
+  const paSP=SS_ZONES['SP / FLOW'].techs.length;
+  const paT=paFP+paGOH+paOSR+paSP;
   const total=Object.values(SS_ZONES).reduce((a,z)=>a+z.techs.length,0);
 
   document.getElementById('ss-totals').innerHTML=`
     <div class="ss-chip"><span class="ss-chip-num">${total}</span> en turno</div>
     <div class="ss-chip" style="border-color:var(--tl)"><span class="ss-chip-num" style="color:var(--tl)">${tlT}</span> TL</div>
-    <div class="ss-chip" style="border-color:var(--muted)"><span class="ss-chip-num" style="color:var(--muted)">${mechT}</span> MT
-      <span style="font-size:11px;color:var(--dim);">(GOH ${gohT} · FP ${fpT} · FLEX ${flexT})</span>
+    <div class="ss-chip" style="border-color:var(--goh)"><span class="ss-chip-num" style="color:var(--goh)">${mechT}</span> MT
+      <span style="font-size:11px;color:var(--dim);">(GOH ${gohMT} · FP ${fpMT} · FLEX ${flexT})</span>
     </div>
-    <div class="ss-chip" style="border-color:var(--osr)"><span class="ss-chip-num" style="color:var(--osr)">${paT}</span> PA</div>
+    <div class="ss-chip" style="border-color:var(--osr)"><span class="ss-chip-num" style="color:var(--osr)">${paT}</span> PA
+      <span style="font-size:11px;color:var(--dim);">(FP ${paFP} · GOH ${paGOH} · OSR ${paOSR} · SP ${paSP})</span>
+    </div>
   `;
 
   const tableRows=zones.map(z=>{
@@ -1450,10 +1454,13 @@ function applyPasteMorning(){
     if(zone&&planRow) planRow.zone=zone;
   });
 
-  // 2. Everyone with MY SAME shift NOT in PLANNING:
-  //    - If they have a rotative shift (M/A/N) → extras, show in main table
-  //    - If no shift (52) → 5/2, show in separate section
+  // 2. Everyone with MY SAME shift NOT in PLANNING
+  // Team 1/2 = L-V support workers (shown in extras section)
+  // Any other team = true punctual extras (also shown in extras section)
+  // All go to today52 for display, distinguished by team
   const seen52=new Set();
+  const LV_TEAMS=['Team 1','Team 2'];
+
   allEntries.filter(e=>{
     if(e.shift!==pasteShift) return false;
     const mapped=nameMap[e.fullName];
@@ -1464,10 +1471,14 @@ function applyPasteMorning(){
     if(seen52.has(shortName)) return;
     seen52.add(shortName);
 
-    // Get worker info from WORKERS array
-    const workerInfo=WORKERS.find(w=>w.name===e.fullName);
-    const team=workerInfo?.team||'';
-    const location=workerInfo?.location||'';
+    // Look up worker info
+    const workerInfo=WORKERS.find(w=>w.name===e.fullName||w.name===shortName);
+    const team=workerInfo?.team||e._team||'';
+    const location=workerInfo?.location||e._location||'';
+    // Normalize team case (Team C vs Team c)
+    const teamNorm=team.trim().toLowerCase().replace('team ','');
+    const isLV=LV_TEAMS.map(t=>t.toLowerCase()).includes(team.toLowerCase());
+    const isExtra=!isLV; // everyone else = punctual extra
 
     const existing=PLANNING.find(p=>p.name===shortName||p._fullName===e.fullName);
     if(!existing){
@@ -1477,7 +1488,8 @@ function applyPasteMorning(){
         zone:'',
         role:location||team||'Extra',
         _is52:true,
-        _isExtra:true,
+        _isExtra:isExtra,
+        _isLV:isLV,
         _fullName:e.fullName,
         _team:team,
         _location:location,
@@ -1486,7 +1498,7 @@ function applyPasteMorning(){
     const previewZone=previewZones[shortName]||'';
     todayData[shortName]={shift:e.shift, time:e.time, zone:previewZone};
     if(previewZone&&existing) existing.zone=previewZone;
-    today52.push({fullName:e.fullName, shortName, time:e.time, team, location});
+    today52.push({fullName:e.fullName, shortName, time:e.time, team, location, isLV, isExtra});
   });
 
   // 3. DAY shift workers (emergency/special) = treat as extras
@@ -1738,23 +1750,33 @@ function renderMP(){
   if(pasteApplied&&today52.length){
     s52Section.style.display='block';
     // Split by role: Maintenance Technicians first, then Production Assistants
-    const mechs=today52.filter(e=>{
-      const w=WORKERS.find(w=>w.name===e.fullName);
-      return !w||w.location==='Maintenance Technician'||w.location==='Maintenance Tech'||!w.location||w.team==='Team 1'||w.team==='Team 2';
-    });
-    const pas=today52.filter(e=>{
+    // Split by team: L-V workers (Team 1/2) vs punctual extras (other teams)
+    const lvWorkers=today52.filter(e=>e.isLV);
+    const trueExtras=today52.filter(e=>e.isExtra||(!e.isLV&&!e.isExtra));
+    // Within each group split PA vs MT
+    function isPAWorker(e){
       const w=WORKERS.find(w=>w.name===e.fullName);
       return w&&(w.location==='Production Assistant'||w.location==='Prod. Assistant');
-    });
+    }
+    const extraMechs=trueExtras.filter(e=>!isPAWorker(e));
+    const extraPAs=trueExtras.filter(e=>isPAWorker(e));
+    const lvMechs=lvWorkers.filter(e=>!isPAWorker(e));
+    const lvPAs=lvWorkers.filter(e=>isPAWorker(e));
+    // Combine for display: true extras first, then L-V
+    const mechs=[...extraMechs,...lvMechs];
+    const pas=[...extraPAs,...lvPAs];
 
     let html52='';
-    if(mechs.length){
-      html52+=`<tr><td colspan="3" style="padding:6px 12px;font-size:10px;font-weight:600;letter-spacing:.07em;color:var(--muted);font-family:'Roboto Mono',monospace;text-transform:uppercase;background:var(--s2);">Maintenance Technicians (${mechs.length})</td></tr>`;
-      html52+=mechs.map((e,i)=>render52Row(e,today52.indexOf(e))).join('');
+    // Show extras (non Team 1/2) first, then L-V workers
+    if(extraMechs.length||extraPAs.length){
+      html52+=`<tr><td colspan="3" style="padding:6px 12px;font-size:10px;font-weight:600;letter-spacing:.07em;color:var(--osr);font-family:'Roboto Mono',monospace;text-transform:uppercase;background:var(--s2);">★ Extras puntuales (${trueExtras.length})</td></tr>`;
+      html52+=extraMechs.map(e=>render52Row(e,today52.indexOf(e))).join('');
+      html52+=extraPAs.map(e=>render52Row(e,today52.indexOf(e))).join('');
     }
-    if(pas.length){
-      html52+=`<tr><td colspan="3" style="padding:6px 12px;font-size:10px;font-weight:600;letter-spacing:.07em;color:var(--muted);font-family:'Roboto Mono',monospace;text-transform:uppercase;background:var(--s2);">Production Assistants (${pas.length})</td></tr>`;
-      html52+=pas.map((e,i)=>render52Row(e,today52.indexOf(e))).join('');
+    if(lvMechs.length||lvPAs.length){
+      html52+=`<tr><td colspan="3" style="padding:6px 12px;font-size:10px;font-weight:600;letter-spacing:.07em;color:var(--muted);font-family:'Roboto Mono',monospace;text-transform:uppercase;background:var(--s2);">Team 1/2 — Apoyo L-V (${lvWorkers.length})</td></tr>`;
+      html52+=lvMechs.map(e=>render52Row(e,today52.indexOf(e))).join('');
+      html52+=lvPAs.map(e=>render52Row(e,today52.indexOf(e))).join('');
     }
     s52Tbody.innerHTML=html52;
   } else {
