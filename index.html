@@ -1528,6 +1528,12 @@ function applyPasteMorning(){
     }
   });
 
+  // Clear tasks except Reminder and Report Next Shift
+  const keepStatuses=['Reminder','Report Next Shift'];
+  for(let i=TASKS.length-1;i>=0;i--){
+    if(!keepStatuses.includes(TASKS[i].status)) TASKS.splice(i,1);
+  }
+
   document.getElementById('paste-body').classList.add('hidden');
   document.getElementById('paste-result').classList.add('hidden');
   if(document.getElementById('xls-input')) document.getElementById('xls-input').value='';
@@ -1636,6 +1642,7 @@ function setCellVal(pi,di,val){
   const top=Object.entries(freq).sort((a,b)=>b[1]-a[1])[0];
   if(top) PLANNING[pi].zone=top[0];
   closeCellEdit();
+  if(pasteApplied){ updateSSFromToday(); renderSS(); }
   renderMP();
 }
 
@@ -1668,14 +1675,19 @@ let today52 = [];     // [{fullName, shift, time}]
 
 function render52Row(e,i){
   const planRow=PLANNING.find(p=>p.name===e.shortName||p._fullName===e.fullName);
-  const zone=planRow?.zone||'';
+  // Check todayData first (set from preview zone edits), then PLANNING
+  const zone=todayData[e.shortName]?.zone||planRow?.zone||'';
   return`<tr style="${zone?'':'background:rgba(245,158,11,.05)'}">
     <td>${e.fullName}${e.shortName&&e.shortName!==e.fullName?` <span style="font-size:10px;color:var(--muted);">(${e.shortName})</span>`:''}</td>
     <td>
-      <select class="extras-zone-sel" onchange="set52Zone(${i},this.value)">
-        <option value="">— asignar zona —</option>
-        ${['FP','GOH','FLEX','OSR','TL','SP'].map(z=>`<option value="${z}" ${zone===z?'selected':''}>${z}</option>`).join('')}
-      </select>
+      ${zone
+        ? `<span class="pill ${zone==='GOH'?'p-goh':zone==='FP'?'p-fp':zone==='FLEX'?'p-flex':zone==='OSR'?'p-osr':zone==='TL'?'p-tl':'p-sp'}">${zone}</span>
+           <span style="font-size:11px;color:var(--dim);cursor:pointer;margin-left:6px;" onclick="set52ZoneClear(${i})" title="Cambiar zona">✎</span>`
+        : `<select class="extras-zone-sel" onchange="set52Zone(${i},this.value)">
+            <option value="">— asignar zona —</option>
+            ${['FP','GOH','FLEX','OSR','TL','SP'].map(z=>`<option value="${z}" ${zone===z?'selected':''}>${z}</option>`).join('')}
+           </select>`
+      }
     </td>
     <td style="font-family:'Roboto Mono',monospace;font-size:11px;color:var(--muted);">${e.time}</td>
   </tr>`;
@@ -1873,6 +1885,21 @@ function resetPlanning(){
 }
 window.resetPlanning=resetPlanning;
 window.renderMP=renderMP;
+
+function set52ZoneClear(i){
+  const e=today52[i];
+  if(!e) return;
+  const planRow=PLANNING.find(p=>p.name===e.shortName||p._fullName===e.fullName);
+  if(planRow) planRow.zone='';
+  if(todayData[e.shortName]) todayData[e.shortName].zone='';
+  const techRow=TECHS.find(t=>t.name===e.shortName);
+  if(techRow) techRow.zone='';
+  updateSSFromToday();
+  renderSS();
+  renderTasksView();
+  renderMP();
+}
+window.set52ZoneClear=set52ZoneClear;
 
 function set52Zone(i, zone){
   if(!e) return;
