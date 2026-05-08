@@ -1609,7 +1609,6 @@ function updateSSFromToday(){
   // Reset all zones
   Object.keys(SS_ZONES).forEach(k=>SS_ZONES[k].techs=[]);
 
-  // Map zone → SS_ZONES key
   const zoneToSS={
     'GOH':'GOH Area', 'FP':'FP Area', 'FLEX':'FLEX',
     'S GOH':'GOH Silo', 'S FP':'FP Silo', 'OSR':'OSR',
@@ -1617,15 +1616,26 @@ function updateSSFromToday(){
     'SICK':'Holidays / Sick', 'H':'Holidays / Sick',
   };
 
-  // Add each person in todayData to correct SS zone
+  // 1. Add each person in todayData (fixed staff)
   Object.entries(todayData).forEach(([name, data])=>{
     if(data.shift==='HOL'||data.shift==='SICK'){
       SS_ZONES['Holidays / Sick'].techs.push(name);
       return;
     }
-    const zone=data.zone||PLANNING.find(p=>p.name===name)?.zone||'';
+    const zone=data.zone||PLANNING.find(p=>p.name===name&&!p._is52)?.zone||'';
     const ssKey=zoneToSS[zone];
-    if(ssKey&&SS_ZONES[ssKey]){
+    if(ssKey&&SS_ZONES[ssKey]&&!SS_ZONES[ssKey].techs.includes(name)){
+      SS_ZONES[ssKey].techs.push(name);
+    }
+  });
+
+  // 2. Add extras (today52) that have a zone assigned
+  today52.forEach(e=>{
+    const name=e.shortName||e.fullName;
+    const zone=todayData[name]?.zone||PLANNING.find(p=>p.name===name||p._fullName===e.fullName)?.zone||'';
+    if(!zone) return;
+    const ssKey=zoneToSS[zone];
+    if(ssKey&&SS_ZONES[ssKey]&&!SS_ZONES[ssKey].techs.includes(name)){
       SS_ZONES[ssKey].techs.push(name);
     }
   });
@@ -1924,6 +1934,7 @@ function set52ZoneClear(i){
 window.set52ZoneClear=set52ZoneClear;
 
 function set52Zone(i, zone){
+  const e=today52[i];
   if(!e) return;
   const planRow=PLANNING.find(p=>p.name===e.shortName||p._fullName===e.fullName);
   if(planRow){
@@ -1932,9 +1943,11 @@ function set52Zone(i, zone){
     if(techRow) techRow.zone=zone;
   }
   if(todayData[e.shortName]) todayData[e.shortName].zone=zone;
+  else todayData[e.shortName]={shift:pasteShift, time:e.time, zone};
   updateSSFromToday();
   renderSS();
   renderTasksView();
+  renderMP();
 }
 
 function toggleF(z,el){
