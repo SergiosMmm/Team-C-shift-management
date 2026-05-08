@@ -1154,21 +1154,38 @@ function renderSS(){
     {name:'Hols / Sick',color:'var(--dim)',techs:SS_ZONES['Holidays / Sick'].techs},
   ];
 
-  // Counters — MT = FLEX+FP Area+GOH Area, PA = FP Silo+GOH Silo+OSR+SP/FLOW
-  const gohMT=SS_ZONES['GOH Area'].techs.length;
-  const fpMT=SS_ZONES['FP Area'].techs.length;
-  const flexT=SS_ZONES['FLEX'].techs.length;
+  // Counters — exclude Holidays/Sick
+  const sick=SS_ZONES['Holidays / Sick'].techs;
+  function notSick(name){ return !sick.includes(name); }
+
+  const gohMT=SS_ZONES['GOH Area'].techs.filter(notSick).length;
+  const fpMT=SS_ZONES['FP Area'].techs.filter(notSick).length;
+  const flexT=SS_ZONES['FLEX'].techs.filter(notSick).length;
   const mechT=gohMT+fpMT+flexT;
-  const tlT=SS_ZONES['TL'].techs.length;
-  const paFP=SS_ZONES['FP Silo'].techs.length;
-  const paGOH=SS_ZONES['GOH Silo'].techs.length;
-  const paOSR=SS_ZONES['OSR'].techs.length;
-  const paSP=SS_ZONES['SP / FLOW'].techs.length;
+  const tlT=SS_ZONES['TL'].techs.filter(notSick).length;
+  const paFP=SS_ZONES['FP Silo'].techs.filter(notSick).length;
+  const paGOH=SS_ZONES['GOH Silo'].techs.filter(notSick).length;
+  const paOSR=SS_ZONES['OSR'].techs.filter(notSick).length;
+  const paSP=SS_ZONES['SP / FLOW'].techs.filter(notSick).length;
   const paT=paFP+paGOH+paOSR+paSP;
-  const total=Object.values(SS_ZONES).reduce((a,z)=>a+z.techs.length,0);
+  const sickT=sick.length;
+  const total=tlT+mechT+paT;
+
+  // 5/2 planned works counter (Team 1/2 in today52)
+  const pw52=today52.filter(e=>e.isLV);
+  const pw52MT=pw52.filter(e=>{
+    const w=WORKERS.find(w=>w.name===e.fullName);
+    return !w||(w.location!=='Production Assistant'&&w.location!=='Prod. Assistant');
+  }).length;
+  const pw52PA=pw52.filter(e=>{
+    const w=WORKERS.find(w=>w.name===e.fullName);
+    return w&&(w.location==='Production Assistant'||w.location==='Prod. Assistant');
+  }).length;
 
   document.getElementById('ss-totals').innerHTML=`
-    <div class="ss-chip"><span class="ss-chip-num">${total}</span> en turno</div>
+    <div class="ss-chip"><span class="ss-chip-num">${total}</span> en turno
+      ${sickT?`<span style="font-size:11px;color:var(--sick);margin-left:4px;">(+${sickT} sick)</span>`:''}
+    </div>
     <div class="ss-chip" style="border-color:var(--tl)"><span class="ss-chip-num" style="color:var(--tl)">${tlT}</span> TL</div>
     <div class="ss-chip" style="border-color:var(--goh)"><span class="ss-chip-num" style="color:var(--goh)">${mechT}</span> MT
       <span style="font-size:11px;color:var(--dim);">(GOH ${gohMT} · FP ${fpMT} · FLEX ${flexT})</span>
@@ -1176,6 +1193,11 @@ function renderSS(){
     <div class="ss-chip" style="border-color:var(--osr)"><span class="ss-chip-num" style="color:var(--osr)">${paT}</span> PA
       <span style="font-size:11px;color:var(--dim);">(FP ${paFP} · GOH ${paGOH} · OSR ${paOSR} · SP ${paSP})</span>
     </div>
+    ${pw52.length?`<div class="ss-chip" style="border-color:var(--muted)">
+      <span style="font-size:10px;font-family:'Roboto Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;">Planned Works L-V</span>
+      <span class="ss-chip-num" style="color:var(--muted);font-size:16px;">${pw52.length}</span>
+      <span style="font-size:11px;color:var(--dim);">(MT ${pw52MT} · PA ${pw52PA})</span>
+    </div>`:''}
   `;
 
   const tableRows=zones.map(z=>{
@@ -1685,7 +1707,7 @@ function render52Row(e,i){
            <span style="font-size:11px;color:var(--dim);cursor:pointer;margin-left:6px;" onclick="set52ZoneClear(${i})" title="Cambiar zona">✎</span>`
         : `<select class="extras-zone-sel" onchange="set52Zone(${i},this.value)">
             <option value="">— asignar zona —</option>
-            ${['FP','GOH','FLEX','OSR','TL','SP'].map(z=>`<option value="${z}" ${zone===z?'selected':''}>${z}</option>`).join('')}
+            ${['FP','GOH','FLEX','OSR','TL','SP','S FP','S GOH'].map(z=>`<option value="${z}" ${zone===z?'selected':''}>${z}</option>`).join('')}
            </select>`
       }
     </td>
