@@ -358,19 +358,9 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
       <input class="login-input" id="login-name" placeholder="Ej: Sergio, Julio..." autocomplete="off">
     </div>
     <div class="login-field">
-      <div class="login-label">Tipo de acceso</div>
-      <div class="login-role-btns">
-        <button class="role-btn" id="role-tl" onclick="selectRole('TL',this)">
-          👷 Team Leader
-        </button>
-        <button class="role-btn" id="role-tech" onclick="selectRole('Tech',this)">
-          🔧 Técnico
-        </button>
-      </div>
-    </div>
-    <div class="login-field" id="pin-field" style="display:none;">
       <div class="login-label">PIN</div>
-      <input class="login-input" id="login-pin" type="password" placeholder="••••" maxlength="6">
+      <input class="login-input" id="login-pin" type="password" placeholder="••••" maxlength="6"
+        onkeydown="if(event.key==='Enter')doLogin()">
     </div>
     <div class="login-err" id="login-err"></div>
     <button class="login-btn" onclick="doLogin()">Entrar</button>
@@ -1132,13 +1122,18 @@ updateClock();setInterval(updateClock,1000);
 
 // ========== INIT — Firebase ==========
 async function initApp(){
-  // Check existing session
-  const saved=sessionStorage.getItem('teamc_user');
+  // Check existing session (localStorage, 24h expiry)
+  const saved=localStorage.getItem('teamc_user');
   if(saved){
     try{
-      currentUser=JSON.parse(saved);
-      applyUserSession();
-    }catch(e){ sessionStorage.removeItem('teamc_user'); }
+      const session=JSON.parse(saved);
+      if(session.expiresAt&&Date.now()<session.expiresAt){
+        currentUser={name:session.name, role:session.role};
+        applyUserSession();
+      } else {
+        localStorage.removeItem('teamc_user'); // expired
+      }
+    }catch(e){ localStorage.removeItem('teamc_user'); }
   }
 
   setLoading('Conectando con Firebase...');
@@ -2547,12 +2542,12 @@ window.deleteWorker=deleteWorker;
 // ========== AUTH ==========
 let currentUser = null; // {name, role: 'TL'|'Tech'}
 let selectedRole = null;
-const TL_PIN = '1234';   // Change in Firebase config
-const TECH_PIN = '5678'; // Change in Firebase config
+const TL_PIN = '';   // Must be set in Firebase configs/pins
+const TECH_PIN = ''; // Must be set in Firebase configs/pins
 
 async function loadPINs(){
   try{
-    const snap=await getDocs(collection(db,'config'));
+    const snap=await getDocs(collection(db,'configs'));
     snap.forEach(d=>{
       const cfg=d.data();
       if(cfg.tlPin||cfg.TLpin) window._TL_PIN=cfg.tlPin||cfg.TLpin;
@@ -2562,11 +2557,8 @@ async function loadPINs(){
 }
 
 function selectRole(role, el){
+  // No longer used but kept for compatibility
   selectedRole=role;
-  document.querySelectorAll('.role-btn').forEach(b=>b.classList.remove('selected'));
-  el.classList.add('selected');
-  document.getElementById('pin-field').style.display='flex';
-  document.getElementById('login-pin').focus();
 }
 
 function doLogin(){
@@ -2575,16 +2567,26 @@ function doLogin(){
   const err=document.getElementById('login-err');
 
   if(!name){ err.textContent='Introduce tu nombre'; return; }
-  if(!selectedRole){ err.textContent='Selecciona TL o Técnico'; return; }
+  if(!pin){ err.textContent='Introduce tu PIN'; return; }
 
   const tlPin=window._TL_PIN||TL_PIN;
   const techPin=window._TECH_PIN||TECH_PIN;
 
-  if(selectedRole==='TL'&&pin!==tlPin){ err.textContent='PIN incorrecto'; return; }
-  if(selectedRole==='Tech'&&pin!==techPin){ err.textContent='PIN incorrecto'; return; }
+  // Determine role from PIN
+  if(pin===tlPin){
+    selectedRole='TL';
+  } else if(pin===techPin){
+    selectedRole='Tech';
+  } else {
+    err.textContent='PIN incorrecto';
+    document.getElementById('login-pin').value='';
+    document.getElementById('login-pin').focus();
+    return;
+  }
 
   currentUser={name, role:selectedRole};
-  sessionStorage.setItem('teamc_user', JSON.stringify(currentUser));
+  const session={...currentUser, expiresAt:Date.now()+(24*60*60*1000)};
+  localStorage.setItem('teamc_user', JSON.stringify(session));
   err.textContent='';
   applyUserSession();
 }
@@ -2592,7 +2594,7 @@ function doLogin(){
 function doLogout(){
   if(!confirm('¿Cerrar sesión?')) return;
   currentUser=null;
-  sessionStorage.removeItem('teamc_user');
+  localStorage.removeItem('teamc_user');
   location.reload();
 }
 
