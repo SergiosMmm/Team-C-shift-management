@@ -36,6 +36,27 @@
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;}
 
+
+/* ========== LOGIN SCREEN ========== */
+.login-screen{position:fixed;inset:0;background:var(--bg);z-index:1000;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:0;}
+.login-screen.hidden{display:none;}
+.login-box{background:var(--s1);border:1px solid var(--border2);border-radius:16px;padding:32px;width:100%;max-width:360px;display:flex;flex-direction:column;gap:16px;}
+.login-logo{font-family:'Roboto Mono',monospace;font-size:18px;font-weight:600;text-align:center;margin-bottom:8px;}
+.login-logo span{color:var(--flex);}
+.login-field{display:flex;flex-direction:column;gap:6px;}
+.login-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-family:'Roboto Mono',monospace;}
+.login-input{background:var(--s2);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 14px;font-size:15px;color:var(--text);font-family:'Source Sans 3',sans-serif;outline:none;width:100%;}
+.login-input:focus{border-color:var(--flex);}
+.login-btn{padding:12px;border-radius:var(--r-sm);border:none;background:var(--flex);color:#0d1117;font-size:15px;font-weight:600;cursor:pointer;font-family:'Source Sans 3',sans-serif;width:100%;}
+.login-btn:hover{background:#3dba4e;}
+.login-err{font-size:13px;color:var(--sick);text-align:center;min-height:18px;}
+.login-role-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.role-btn{padding:14px;border-radius:var(--r-sm);border:1px solid var(--border);background:transparent;color:var(--muted);font-size:14px;cursor:pointer;font-family:'Source Sans 3',sans-serif;text-align:center;transition:all .15s;}
+.role-btn:hover{border-color:var(--flex);color:var(--flex);}
+.role-btn.selected{border-color:var(--flex);color:var(--flex);background:var(--flex-bg);}
+.user-badge{display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;background:var(--s2);border:1px solid var(--border);font-size:12px;font-family:'Roboto Mono',monospace;cursor:pointer;}
+.user-badge:hover{border-color:var(--border2);}
+
 /* TOPBAR */
 .topbar{background:var(--s1);border-bottom:1px solid var(--border);padding:0 16px;display:flex;align-items:center;justify-content:space-between;height:50px;position:sticky;top:0;z-index:50;}
 .brand{display:flex;align-items:center;gap:9px;}
@@ -328,12 +349,41 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
 </head>
 <body>
 
+<!-- LOGIN SCREEN -->
+<div class="login-screen" id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">TEAM C <span>·</span> Lelystad</div>
+    <div class="login-field">
+      <div class="login-label">Tu nombre</div>
+      <input class="login-input" id="login-name" placeholder="Ej: Sergio, Julio..." autocomplete="off">
+    </div>
+    <div class="login-field">
+      <div class="login-label">Tipo de acceso</div>
+      <div class="login-role-btns">
+        <button class="role-btn" id="role-tl" onclick="selectRole('TL',this)">
+          👷 Team Leader
+        </button>
+        <button class="role-btn" id="role-tech" onclick="selectRole('Tech',this)">
+          🔧 Técnico
+        </button>
+      </div>
+    </div>
+    <div class="login-field" id="pin-field" style="display:none;">
+      <div class="login-label">PIN</div>
+      <input class="login-input" id="login-pin" type="password" placeholder="••••" maxlength="6">
+    </div>
+    <div class="login-err" id="login-err"></div>
+    <button class="login-btn" onclick="doLogin()">Entrar</button>
+  </div>
+</div>
+
 <div class="topbar">
   <div class="brand">
     <div class="brand-pulse"></div>
     <div class="brand-name">TEAM C <span>· Lelystad</span></div>
   </div>
-  <div class="topbar-right">
+  <div class="topbar-right" id="topbar-right">
+    <div class="user-badge" id="user-badge" onclick="doLogout()" style="display:none;" title="Cerrar sesión">👤 <span id="user-badge-name"></span> <span style="color:var(--dim);">✕</span></div>
     <select class="shift-sel">
       <option>Shift 1 · Morning 06–14</option>
       <option>Shift 2 · Afternoon 14–22</option>
@@ -352,6 +402,7 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
   <button class="nav-tab" onclick="goTab('ss',this)">Shift Start</button>
   <button class="nav-tab" onclick="goTab('mp',this)">Planning</button>
   <button class="nav-tab" onclick="goTab('workers',this)">Equipo</button>
+  <button class="nav-tab" id="tab-qr" onclick="goTab('qr',this)">QR</button>
 </div>
 
 <div class="main">
@@ -618,6 +669,33 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
   </div>
 </div>
 
+<!-- ======== QR SCANNER ======== -->
+<div class="view" id="view-qr">
+  <div style="max-width:600px;margin:0 auto;">
+    <div style="margin-bottom:16px;">
+      <div class="m-lbl2" style="margin-bottom:6px;">Buscar máquina / conveyor / cadena</div>
+      <input type="text" id="qr-search" class="m-input" style="font-size:16px;padding:12px 14px;"
+        placeholder="Nombre o código de máquina..." oninput="searchMachines()">
+    </div>
+    <div id="qr-results" style="margin-bottom:16px;"></div>
+    <div id="qr-output" style="display:none;background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:24px;text-align:center;">
+      <div id="qr-machine-name" style="font-size:16px;font-weight:600;margin-bottom:4px;"></div>
+      <div id="qr-machine-code" style="font-family:'Roboto Mono',monospace;font-size:13px;color:var(--muted);margin-bottom:16px;"></div>
+      <div id="qr-canvas-wrap" style="display:flex;justify-content:center;margin-bottom:16px;"></div>
+      <button class="btn btn-p" onclick="downloadQR()">Descargar QR</button>
+    </div>
+    <div style="margin-top:20px;padding:14px;background:var(--s1);border:1px solid var(--border);border-radius:var(--r);">
+      <div style="font-size:11px;color:var(--muted);font-family:'Roboto Mono',monospace;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Cargar lista de máquinas</div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:10px;">Excel con dos columnas: Nombre de máquina | Código</p>
+      <input type="file" id="machines-file" accept=".xls,.xlsx" style="font-size:13px;color:var(--text);background:var(--s2);border:1px solid var(--border);border-radius:var(--r-sm);padding:8px;width:100%;margin-bottom:8px;">
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-p" onclick="importMachines()">Importar a Firebase</button>
+        <span id="machines-status" style="font-size:12px;color:var(--muted);align-self:center;"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
 </div>
 
 
@@ -689,6 +767,7 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script type="module">
 // ========== DATA ==========
 
@@ -787,7 +866,7 @@ const CHECKLIST_ITEMS = [
 
 // ========== FIREBASE ==========
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot, serverTimestamp, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot, serverTimestamp, query, orderBy, setDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyD1zkMjtZSR9IuiC8SjySeDXJUb2HtJTjo",
@@ -829,6 +908,67 @@ async function fbDeleteTask(fbId){
 
 async function fbAddHistory(data){
   await addDoc(collection(db,'history'),{...data, timestamp:serverTimestamp()});
+}
+
+// ── Shift state persistence ──
+async function fbSaveShiftState(){
+  try{
+    const state={
+      todayData,
+      today52,
+      pasteApplied,
+      pasteShift,
+      shiftDays:window._shiftDays||null,
+      activeColIdx:window._activeColIdx??null,
+      shiftLabel:window.pasteShiftLabel||'',
+      savedAt:Date.now(),
+    };
+    await setDoc(doc(db,'shiftState','current'), state);
+    console.log('Shift state saved to Firebase');
+  }catch(e){ console.warn('Failed to save shift state:',e); }
+}
+
+async function fbLoadShiftState(){
+  try{
+    const snap=await getDocs(collection(db,'shiftState'));
+    if(snap.empty) return false;
+    // Get most recent
+    let state=null;
+    snap.forEach(d=>{ if(!state||d.data().savedAt>state.savedAt) state=d.data(); });
+    if(!state||!state.pasteApplied) return false;
+
+    // Restore state
+    todayData=state.todayData||{};
+    today52=state.today52||[];
+    pasteApplied=state.pasteApplied||false;
+    pasteShift=state.pasteShift||'M';
+    window._shiftDays=state.shiftDays||null;
+    window._activeColIdx=state.activeColIdx??null;
+    window.pasteShiftLabel=state.shiftLabel||'';
+
+    // Restore 5/2 workers to PLANNING and TECHS
+    today52.forEach(e=>{
+      const shortName=e.shortName||e.fullName;
+      if(!PLANNING.find(p=>p.name===shortName)){
+        PLANNING.push({name:shortName,days:['—','—','—','—','—','—'],
+          zone:todayData[shortName]?.zone||'',role:'5/2',_is52:true,
+          _isExtra:e.isExtra,_isLV:e.isLV,_fullName:e.fullName,
+          _team:e.team,_location:e.location});
+      }
+      if(!TECHS.find(t=>t.name===shortName)){
+        TECHS.push({name:shortName,zone:todayData[shortName]?.zone||'',sub:'5/2',_is52:true});
+      }
+    });
+
+    const sub=document.getElementById('paste-sub-msg');
+    if(sub){
+      const age=Math.round((Date.now()-state.savedAt)/60000);
+      sub.textContent=`${state.shiftLabel||'Turno'} cargado hace ${age}min · ${Object.keys(todayData).length} en turno · ${today52.length} extras`;
+      sub.style.color='var(--flex)';
+    }
+    console.log('Shift state loaded from Firebase');
+    return true;
+  }catch(e){ console.warn('Failed to load shift state:',e); return false; }
 }
 
 // ── Real-time listener ──
@@ -992,8 +1132,23 @@ updateClock();setInterval(updateClock,1000);
 
 // ========== INIT — Firebase ==========
 async function initApp(){
+  // Check existing session
+  const saved=sessionStorage.getItem('teamc_user');
+  if(saved){
+    try{
+      currentUser=JSON.parse(saved);
+      applyUserSession();
+    }catch(e){ sessionStorage.removeItem('teamc_user'); }
+  }
+
   setLoading('Conectando con Firebase...');
   try{
+    // Load PINs from Firebase config
+    await loadPINs();
+
+    // Load machines for QR
+    loadMachines(); // async, non-blocking
+
     // Load workers first — builds NAME_MAP dynamically
     setLoading('Cargando trabajadores...');
     const workersSnap = await getDocs(collection(db,'workers'));
@@ -1025,12 +1180,21 @@ async function initApp(){
     console.warn('Firebase load failed, using local data:',e);
     setLoading('');
   }
+  // Try to load today's shift state from Firebase
+  const shiftLoaded=await fbLoadShiftState();
+
   renderTasksView();
   renderSS();
   renderMP();
   // Save backup of fixed planning
   window._PLANNING_BACKUP = PLANNING.filter(p=>!p._is52).map(p=>({...p, days:[...p.days]}));
   console.log('PLANNING backup saved:', window._PLANNING_BACKUP.length, 'entries');
+
+  if(shiftLoaded){
+    updateSSFromToday();
+    renderSS();
+    renderMP();
+  }
 }
 
 initApp();
@@ -1083,7 +1247,7 @@ function renderAreaTasks(areaZone, containerId){
     const note = t.note?`<div class="task-note-i">${t.note}</div>`:'';
     return `<div class="task-card" style="position:relative;" onclick="openModal('${t.id}')">
       <span onclick="event.stopPropagation();quickDelete('${t.id}')" style="position:absolute;top:6px;right:7px;font-size:11px;color:var(--dim);cursor:pointer;line-height:1;padding:2px 4px;" title="Eliminar">✕</span>
-      <div class="task-woid">#${t.woid} ${src}</div>
+      <div class="task-woid">#${t.woid} ${src}${t.createdAt?`<span style="margin-left:6px;color:var(--dim);font-size:10px;">${getTaskAge(t)}</span>`:''}</div>
       <div class="task-title">${t.title||'<em style="color:var(--muted)">Sin descripción</em>'}</div>
       <div class="task-foot">${techs} ${stTag(t.status)}</div>
       ${note}
@@ -1603,6 +1767,9 @@ function applyPasteMorning(){
   // Update Shift Start with today's actual staff
   updateSSFromToday();
   renderSS();
+
+  // Persist shift state so other TLs see it
+  fbSaveShiftState();
 }
 
 function updateSSFromToday(){
@@ -1948,6 +2115,7 @@ function set52Zone(i, zone){
   renderSS();
   renderTasksView();
   renderMP();
+  fbSaveShiftState();
 }
 
 function toggleF(z,el){
@@ -2071,7 +2239,18 @@ function refreshAssignList(){
 
 function selectStatus(key, el, cls){
   if(!selectedTask)return;
+  const prev=selectedTask.status;
   selectedTask.status=key;
+
+  // Track In Progress start/end times
+  if(key==='In Progress'&&prev!=='In Progress'){
+    selectedTask.inProgressAt=nowISO();
+    selectedTask.inProgressBy=currentUser?.name||'TL';
+  }
+  if(prev==='In Progress'&&key!=='In Progress'&&selectedTask.inProgressAt){
+    selectedTask.doneAt=nowISO();
+  }
+
   document.querySelectorAll('.status-opt').forEach(b=>{
     b.className='status-opt';
   });
@@ -2116,17 +2295,19 @@ async function saveTaskEdits(){
     if(isNew){
       // Create in Firebase
       const fbData={
-        title:    selectedTask.title,
-        note:     selectedTask.note,
-        zone:     selectedTask.zones[0]||'',
-        zones:    selectedTask.zones,
-        prio:     selectedTask.prio,
-        status:   selectedTask.status,
-        techs:    selectedTask.techs,
-        source:   selectedTask.source||'',
+        title:      selectedTask.title,
+        note:       selectedTask.note,
+        zone:       selectedTask.zones[0]||'',
+        zones:      selectedTask.zones,
+        prio:       selectedTask.prio,
+        status:     selectedTask.status,
+        techs:      selectedTask.techs,
+        source:     selectedTask.source||'',
         turno,
-        woid:     'NEW',
+        woid:       'NEW',
         fecha,
+        createdAt:  nowISO(),
+        createdBy:  currentUser?.name||'TL',
       };
       const fbId=await fbAddTask(fbData);
       selectedTask._fbId=fbId;
@@ -2362,6 +2543,213 @@ window.importWorkersToFirebase=importWorkersToFirebase;
 window.openAddWorker=openAddWorker;
 window.saveNewWorker=saveNewWorker;
 window.deleteWorker=deleteWorker;
+
+// ========== AUTH ==========
+let currentUser = null; // {name, role: 'TL'|'Tech'}
+let selectedRole = null;
+const TL_PIN = '1234';   // Change in Firebase config
+const TECH_PIN = '5678'; // Change in Firebase config
+
+async function loadPINs(){
+  try{
+    const snap=await getDocs(collection(db,'config'));
+    snap.forEach(d=>{
+      const cfg=d.data();
+      if(cfg.tlPin) window._TL_PIN=cfg.tlPin;
+      if(cfg.techPin) window._TECH_PIN=cfg.techPin;
+    });
+  }catch(e){ console.warn('Could not load PINs from Firebase'); }
+}
+
+function selectRole(role, el){
+  selectedRole=role;
+  document.querySelectorAll('.role-btn').forEach(b=>b.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('pin-field').style.display='flex';
+  document.getElementById('login-pin').focus();
+}
+
+function doLogin(){
+  const name=document.getElementById('login-name').value.trim();
+  const pin=document.getElementById('login-pin').value.trim();
+  const err=document.getElementById('login-err');
+
+  if(!name){ err.textContent='Introduce tu nombre'; return; }
+  if(!selectedRole){ err.textContent='Selecciona TL o Técnico'; return; }
+
+  const tlPin=window._TL_PIN||TL_PIN;
+  const techPin=window._TECH_PIN||TECH_PIN;
+
+  if(selectedRole==='TL'&&pin!==tlPin){ err.textContent='PIN incorrecto'; return; }
+  if(selectedRole==='Tech'&&pin!==techPin){ err.textContent='PIN incorrecto'; return; }
+
+  currentUser={name, role:selectedRole};
+  sessionStorage.setItem('teamc_user', JSON.stringify(currentUser));
+  err.textContent='';
+  applyUserSession();
+}
+
+function doLogout(){
+  if(!confirm('¿Cerrar sesión?')) return;
+  currentUser=null;
+  sessionStorage.removeItem('teamc_user');
+  location.reload();
+}
+
+function applyUserSession(){
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('user-badge').style.display='flex';
+  document.getElementById('user-badge-name').textContent=currentUser.name+' ('+currentUser.role+')';
+
+  // Role-based UI
+  if(currentUser.role==='Tech'){
+    // Hide TL-only elements
+    document.querySelectorAll('.new-task-btn').forEach(b=>b.style.display='none');
+    document.getElementById('tab-qr').style.display='';
+    // Hide Equipo tab
+    document.querySelectorAll('.nav-tab').forEach(t=>{
+      if(t.textContent==='Equipo') t.style.display='none';
+    });
+    // Hide planning controls for tech
+    const resetBtn=document.querySelector('[onclick="resetPlanning()"]');
+    if(resetBtn) resetBtn.style.display='none';
+    const cargarBtn=document.querySelector('[onclick="togglePaste()"]');
+    if(cargarBtn) cargarBtn.style.display='none';
+  } else {
+    // TL sees everything
+    document.getElementById('tab-qr').style.display='none'; // TL doesn't need QR
+  }
+}
+
+window.selectRole=selectRole;
+window.doLogin=doLogin;
+window.doLogout=doLogout;
+
+// ========== TASK TRACKING ==========
+function nowISO(){ return new Date().toISOString(); }
+
+function getTaskAge(task){
+  if(!task.createdAt) return '';
+  const ms=Date.now()-new Date(task.createdAt).getTime();
+  const h=Math.floor(ms/3600000);
+  const m=Math.floor((ms%3600000)/60000);
+  return h>0?`${h}h ${m}m`:`${m}m`;
+}
+
+function getInProgressTime(task){
+  if(!task.inProgressAt) return null;
+  const end=task.doneAt?new Date(task.doneAt).getTime():Date.now();
+  const ms=end-new Date(task.inProgressAt).getTime();
+  const h=Math.floor(ms/3600000);
+  const m=Math.floor((ms%3600000)/60000);
+  return h>0?`${h}h ${m}m`:`${m}m`;
+}
+
+// ========== QR GENERATOR ==========
+let machines=[]; // loaded from Firebase
+
+async function loadMachines(){
+  try{
+    const snap=await getDocs(collection(db,'machines'));
+    machines=[];
+    snap.forEach(d=>machines.push(d.data()));
+    console.log('Machines loaded:', machines.length);
+  }catch(e){ console.warn('Failed to load machines:',e); }
+}
+
+function searchMachines(){
+  const q=document.getElementById('qr-search').value.trim().toLowerCase();
+  const results=document.getElementById('qr-results');
+  const output=document.getElementById('qr-output');
+
+  if(q.length<2){ results.innerHTML=''; output.style.display='none'; return; }
+
+  const matches=machines.filter(m=>
+    m.name?.toLowerCase().includes(q)||
+    m.code?.toLowerCase().includes(q)
+  ).slice(0,10);
+
+  if(!matches.length){
+    results.innerHTML=`<div style="padding:12px;color:var(--muted);font-size:13px;">Sin resultados para "${q}"</div>`;
+    output.style.display='none';
+    return;
+  }
+
+  results.innerHTML=matches.map(m=>`
+    <div onclick="selectMachine(${JSON.stringify(m).replace(/"/g,'&quot;')})"
+      style="padding:10px 14px;background:var(--s1);border:1px solid var(--border);border-radius:var(--r-sm);margin-bottom:6px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:border-color .12s;"
+      onmouseover="this.style.borderColor='var(--flex)'" onmouseout="this.style.borderColor='var(--border)'">
+      <span style="font-size:14px;">${m.name||'Sin nombre'}</span>
+      <span style="font-family:'Roboto Mono',monospace;font-size:12px;color:var(--muted);">${m.code||''}</span>
+    </div>
+  `).join('');
+}
+
+function selectMachine(m){
+  document.getElementById('qr-search').value=m.name||m.code||'';
+  document.getElementById('qr-results').innerHTML='';
+  document.getElementById('qr-machine-name').textContent=m.name||'';
+  document.getElementById('qr-machine-code').textContent=m.code||'';
+
+  const wrap=document.getElementById('qr-canvas-wrap');
+  wrap.innerHTML='';
+  new QRCode(wrap,{
+    text: m.code||m.name||'',
+    width:200, height:200,
+    colorDark:'#ffffff', colorLight:'#0d1117',
+    correctLevel: QRCode.CorrectLevel.M
+  });
+  document.getElementById('qr-output').style.display='block';
+}
+
+function downloadQR(){
+  const canvas=document.querySelector('#qr-canvas-wrap canvas');
+  if(!canvas){ alert('Genera un QR primero'); return; }
+  const a=document.createElement('a');
+  a.download=`QR_${document.getElementById('qr-machine-code').textContent||'machine'}.png`;
+  a.href=canvas.toDataURL();
+  a.click();
+}
+
+async function importMachines(){
+  const fileInput=document.getElementById('machines-file');
+  const status=document.getElementById('machines-status');
+  if(!fileInput.files.length){ alert('Selecciona un archivo Excel'); return; }
+  status.textContent='Leyendo...';
+
+  const reader=new FileReader();
+  reader.onload=async function(e){
+    try{
+      const data=new Uint8Array(e.target.result);
+      const wb=XLSX.read(data,{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+
+      let ok=0;
+      for(const row of rows){
+        const name=String(row[0]||'').trim();
+        const code=String(row[1]||'').trim();
+        if(!name&&!code) continue;
+        await addDoc(collection(db,'machines'),{name,code});
+        ok++;
+        if(ok%50===0) status.textContent=`Importando... ${ok}`;
+      }
+      machines=[];
+      await loadMachines();
+      status.textContent=`✓ ${ok} máquinas importadas`;
+      status.style.color='var(--flex)';
+    }catch(err){
+      status.textContent='Error: '+err.message;
+      status.style.color='var(--sick)';
+    }
+  };
+  reader.readAsArrayBuffer(fileInput.files[0]);
+}
+
+window.searchMachines=searchMachines;
+window.selectMachine=selectMachine;
+window.downloadQR=downloadQR;
+window.importMachines=importMachines;
 
 // ========== EXPOSE TO GLOBAL SCOPE (required for onclick handlers with type=module) ==========
 window.openNewTask=openNewTask;
