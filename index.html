@@ -2555,8 +2555,8 @@ async function loadPINs(){
     const snap=await getDocs(collection(db,'config'));
     snap.forEach(d=>{
       const cfg=d.data();
-      if(cfg.tlPin) window._TL_PIN=cfg.tlPin;
-      if(cfg.techPin) window._TECH_PIN=cfg.techPin;
+      if(cfg.tlPin||cfg.TLpin) window._TL_PIN=cfg.tlPin||cfg.TLpin;
+      if(cfg.techPin||cfg.TechPin) window._TECH_PIN=cfg.techPin||cfg.TechPin;
     });
   }catch(e){ console.warn('Could not load PINs from Firebase'); }
 }
