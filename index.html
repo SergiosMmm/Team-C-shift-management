@@ -1108,6 +1108,8 @@ function goTab(name,el){
   document.getElementById('view-'+name).classList.add('active');
   el.classList.add('active');
   if(name==='workers') renderWorkers();
+  if(name==='qr'&&machines.length===0) loadMachines();
+  if(currentUser?.role==='Tech') applyTechRestrictions();
 }
 
 // ========== CLOCK ==========
@@ -2603,24 +2605,68 @@ function applyUserSession(){
   document.getElementById('user-badge').style.display='flex';
   document.getElementById('user-badge-name').textContent=currentUser.name+' ('+currentUser.role+')';
 
-  // Role-based UI
   if(currentUser.role==='Tech'){
-    // Hide TL-only elements
-    document.querySelectorAll('.new-task-btn').forEach(b=>b.style.display='none');
-    document.getElementById('tab-qr').style.display='';
+    applyTechRestrictions();
+  } else {
+    // TL — hide QR tab (TLs don't need it)
+    const qrTab=document.getElementById('tab-qr');
+    if(qrTab) qrTab.style.display='none';
+  }
+}
+
+function applyTechRestrictions(){
+  // Run after DOM settles
+  setTimeout(()=>{
+    // Hide QR tab — show it
+    const qrTab=document.getElementById('tab-qr');
+    if(qrTab) qrTab.style.display='';
+
     // Hide Equipo tab
     document.querySelectorAll('.nav-tab').forEach(t=>{
-      if(t.textContent==='Equipo') t.style.display='none';
+      if(t.textContent.trim()==='Equipo') t.style.display='none';
     });
-    // Hide planning controls for tech
-    const resetBtn=document.querySelector('[onclick="resetPlanning()"]');
-    if(resetBtn) resetBtn.style.display='none';
-    const cargarBtn=document.querySelector('[onclick="togglePaste()"]');
-    if(cargarBtn) cargarBtn.style.display='none';
-  } else {
-    // TL sees everything
-    document.getElementById('tab-qr').style.display='none'; // TL doesn't need QR
-  }
+
+    // Hide all + Tarea buttons
+    document.querySelectorAll('.new-task-btn').forEach(b=>b.style.display='none');
+
+    // Hide planning controls
+    const selectors=[
+      '[onclick="resetPlanning()"]',
+      '[onclick="togglePaste()"]',
+      '[onclick="openAddWorker()"]',
+      '[onclick="importWorkersToFirebase()"]',
+      '[onclick="fixWorkerShortNames()"]',
+      '[onclick="importMachines()"]',
+      '#btn-import-workers',
+    ];
+    selectors.forEach(s=>{
+      try{ const el=document.querySelector(s); if(el) el.style.display='none'; }catch(e){}
+    });
+
+    // Make task cards non-clickable for editing (view only)
+    // Override openModal to be read-only for Tech
+    window._openModalOriginal=window.openModal;
+    window.openModal=function(id){
+      window._openModalOriginal(id);
+      // Hide edit controls in modal
+      setTimeout(()=>{
+        const saveBtn=document.getElementById('btn-save-task');
+        if(saveBtn) saveBtn.style.display='none';
+        const deleteBtn=document.querySelector('[onclick="deleteTask()"]');
+        if(deleteBtn) deleteBtn.style.display='none';
+        const assignList=document.getElementById('assign-list');
+        if(assignList) assignList.style.pointerEvents='none';
+        document.querySelectorAll('.status-opt').forEach(b=>b.style.pointerEvents='none');
+        document.querySelectorAll('.m-input,.m-select').forEach(el=>el.setAttribute('disabled','true'));
+      },50);
+    };
+
+    // Hide all editable cells in planning
+    document.querySelectorAll('.editable').forEach(td=>{
+      td.classList.remove('editable');
+      td.onclick=null;
+    });
+  }, 300);
 }
 
 window.selectRole=selectRole;
