@@ -1040,6 +1040,7 @@ function prioTag(p){
 
 // ========== NEW TASK — save directly to Firebase, let onSnapshot add it ==========
 function openNewTask(zone){
+  if(!isTL()) return;
   // Don't add to local TASKS — open empty modal directly
   // Task will be created in Firebase when user saves
   selectedTask={
@@ -1076,6 +1077,7 @@ function openNewTask(zone){
 
 
 async function toggleAssign(name){
+  if(!isTL()) return;
   if(!selectedTask) return;
   // Save current field values first
   const titleVal=document.getElementById('m-edit-title').value.trim();
@@ -1242,7 +1244,7 @@ function renderAreaTasks(areaZone, containerId){
     const techs = t.techs.length ? t.techs.map(x=>`<span class="tech-chip">${x}</span>`).join('') : '<span style="font-size:10px;color:var(--dim)">Sin asignar</span>';
     const src = t.source==='PLANNER'?`<span class="src-planner">PLANNER</span>`:'';
     const note = t.note?`<div class="task-note-i">${t.note}</div>`:'';
-    return `<div class="task-card" style="position:relative;" onclick="openModal('${t.id}')">
+    return `<div class="task-card" style="position:relative;" onclick="isTL()&&openModal('${t.id}')">
       <span onclick="event.stopPropagation();quickDelete('${t.id}')" style="position:absolute;top:6px;right:7px;font-size:11px;color:var(--dim);cursor:pointer;line-height:1;padding:2px 4px;" title="Eliminar">✕</span>
       <div class="task-woid">#${t.woid} ${src}${t.createdAt?`<span style="margin-left:6px;color:var(--dim);font-size:10px;">${getTaskAge(t)}</span>`:''}</div>
       <div class="task-title">${t.title||'<em style="color:var(--muted)">Sin descripción</em>'}</div>
@@ -1263,7 +1265,7 @@ function renderAllTasks(){
     ? tasks.map(t=>{
         const techs = t.techs.length ? t.techs.map(x=>`<span class="tech-chip">${x}</span>`).join('') : '<span style="font-size:10px;color:var(--dim)">—</span>';
         const zones = t.zones.length ? t.zones.join(', ') : '—';
-        return `<div class="at-row" style="position:relative;" onclick="openModal('${t.id}')">
+        return `<div class="at-row" style="position:relative;" onclick="isTL()&&openModal('${t.id}')">
           <div class="at-woid">#${t.woid}</div>
           <div class="at-title">${t.title||'<em style="color:var(--muted)">Sin descripción</em>'} <span style="font-size:11px;color:var(--muted)">[${zones}]</span></div>
           <div class="at-techs">${techs}</div>
@@ -1275,6 +1277,7 @@ function renderAllTasks(){
 }
 
 function setAF(f,el){
+  if(!isTL()) return;
   atFilter=f;
   document.querySelectorAll('.at-btn').forEach(b=>b.classList.remove('on'));
   el.classList.add('on');
@@ -1291,6 +1294,7 @@ function renderTasksView(){
 
 // ========== SHIFT START ==========
 function quickDelete(id){
+  if(!isTL()) return;
   const t=TASKS.find(x=>String(x.id)===String(id));
   if(!t)return;
   if(!confirm(`¿Eliminar "${t.title||'tarea sin título'}"?`))return;
@@ -1432,7 +1436,13 @@ const WORKERS = [];
 // today's attendance from paste
 // today's attendance — replaced by new data model below
 
+
+// ========== ROLE GUARD ==========
+function isTL(){ return currentUser?.role==='TL'; }
+function tlOnly(fn){ return isTL()?fn():null; }
+
 function togglePaste(){
+  if(!isTL()) return;
   const body=document.getElementById('paste-body');
   body.classList.toggle('hidden');
 }
@@ -1577,6 +1587,7 @@ function buildPreview(entries){
   window.pasteShiftLabel=shiftLabel;
 }
 function applyPasteMorning(){
+  if(!isTL()) return;
   if(!window.pasteMorning) return;
   const shiftLabel=window.pasteShiftLabel||'Morning';
   const allEntries=window.pasteAllEntries||[];
@@ -1814,6 +1825,7 @@ function closeCellEdit(){
 }
 
 function editCell(td, pi, di){
+  if(!isTL()) return;
   closeCellEdit();
   openCellEl=td;
   const cur=PLANNING[pi].days[di];
@@ -1831,6 +1843,7 @@ function outsideClose(e){
 }
 
 function setCellVal(pi,di,val){
+  if(!isTL()) return;
   PLANNING[pi].days[di]=val;
   // auto-update zone from most frequent non-H non-SICK day
   const freq={};
@@ -1843,6 +1856,7 @@ function setCellVal(pi,di,val){
 }
 
 function editName(td, pi){
+  if(!isTL()) return;
   closeCellEdit();
   openCellEl=td;
   const inp=document.createElement('input');
@@ -2041,6 +2055,7 @@ function getPlanHeaders(){
 }
 
 function resetPlanning(){
+  if(!isTL()) return;
   if(!confirm('¿Reiniciar la tabla de planning?\n\nOK = borra todas las zonas y fechas, mantiene los nombres del equipo.\nCancelar = no hacer nada.')) return;
 
   // Remove 5/2 entries
@@ -2083,6 +2098,7 @@ window.resetPlanning=resetPlanning;
 window.renderMP=renderMP;
 
 function set52ZoneClear(i){
+  if(!isTL()) return;
   const e=today52[i];
   if(!e) return;
   const planRow=PLANNING.find(p=>p.name===e.shortName||p._fullName===e.fullName);
@@ -2098,6 +2114,7 @@ function set52ZoneClear(i){
 window.set52ZoneClear=set52ZoneClear;
 
 function set52Zone(i, zone){
+  if(!isTL()) return;
   const e=today52[i];
   if(!e) return;
   const planRow=PLANNING.find(p=>p.name===e.shortName||p._fullName===e.fullName);
@@ -2133,12 +2150,14 @@ const ALL_STATUSES = [
 
 let isDirty=false;
 function markDirty(){
+  if(!isTL()) return;
   isDirty=true;
   document.getElementById('btn-save-task').style.display='';
 }
 
 // ========== MODAL ==========
 function openModal(id){
+  if(!isTL()) return;
   const t=TASKS.find(x=>String(x.id)===String(id));
   if(!t)return;
   selectedTask=t;
@@ -2235,6 +2254,7 @@ function refreshAssignList(){
 }
 
 function selectStatus(key, el, cls){
+  if(!isTL()) return;
   if(!selectedTask)return;
   const prev=selectedTask.status;
   selectedTask.status=key;
@@ -2256,6 +2276,7 @@ function selectStatus(key, el, cls){
 }
 
 function removeTech(name){
+  if(!isTL()) return;
   if(!selectedTask)return;
   const titleVal=document.getElementById('m-edit-title').value.trim();
   if(titleVal) selectedTask.title=titleVal;
@@ -2268,6 +2289,7 @@ function removeTech(name){
 }
 
 async function saveTaskEdits(){
+  if(!isTL()) return;
   if(!selectedTask)return;
   const titleVal=document.getElementById('m-edit-title').value.trim();
   if(titleVal) selectedTask.title=titleVal;
@@ -2353,6 +2375,7 @@ async function saveTaskEdits(){
 let _savingOnClose=false;
 
 async function deleteTask(){
+  if(!isTL()) return;
   if(!selectedTask)return;
   if(!confirm(`¿Eliminar tarea "${selectedTask.title||'sin título'}"?`))return;
   const fbId=selectedTask._fbId||selectedTask.id;
@@ -2365,6 +2388,7 @@ async function deleteTask(){
 }
 
 function closeModal(e){
+  if(!isTL()) return;
   if(e&&e.target!==document.getElementById('overlay')) return;
   if(selectedTask){
     const titleVal=document.getElementById('m-edit-title').value.trim();
@@ -2661,10 +2685,20 @@ function applyTechRestrictions(){
       },50);
     };
 
-    // Hide all editable cells in planning
+    // Disable task card clicks
+    document.querySelectorAll('.task-card,.at-row').forEach(el=>{
+      el.style.cursor='default';
+      el.style.pointerEvents='none';
+    });
+    // Disable editable cells
     document.querySelectorAll('.editable').forEach(td=>{
       td.classList.remove('editable');
       td.onclick=null;
+    });
+    // Disable all buttons except nav and logout
+    document.querySelectorAll('.btn,.new-task-btn,.parse-apply-btn,.at-btn').forEach(b=>{
+      b.style.pointerEvents='none';
+      b.style.opacity='0.3';
     });
   }, 300);
 }
