@@ -2632,9 +2632,9 @@ function applyUserSession(){
   if(currentUser.role==='Tech'){
     applyTechRestrictions();
   } else {
-    // TL — hide QR tab (TLs don't need it)
+    // TL sees everything including QR
     const qrTab=document.getElementById('tab-qr');
-    if(qrTab) qrTab.style.display='none';
+    if(qrTab) qrTab.style.display='';
   }
 }
 
