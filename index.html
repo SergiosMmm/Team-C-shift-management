@@ -675,10 +675,11 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
       <button class="btn btn-p" onclick="downloadQR()">Descargar QR</button>
     </div>
     <div id="machines-admin" style="margin-top:20px;padding:14px;background:var(--s1);border:1px solid var(--border);border-radius:var(--r);display:none;">
-      <div style="font-size:11px;color:var(--muted);font-family:'Roboto Mono',monospace;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Admin — Importar lista de máquinas</div>
-      <p style="font-size:12px;color:var(--muted);margin-bottom:10px;">Importa los 35,852 activos precargados a Firebase. Solo necesario una vez.</p>
-      <div style="display:flex;gap:8px;">
-        <button class="btn btn-p" onclick="importMachinesPreloaded()">Importar a Firebase</button>
+      <div style="font-size:11px;color:var(--muted);font-family:'Roboto Mono',monospace;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Admin — Actualizar lista de máquinas</div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:10px;">Sube el Excel actualizado (columnas: TREE_ASSET_ID · IDENTIFICATIVE_CODE · COMMON NAME). Sobreescribe los datos actuales en Firebase.</p>
+      <input type="file" id="machines-file" accept=".xlsx,.xls" style="font-size:13px;color:var(--text);background:var(--s2);border:1px solid var(--border);border-radius:var(--r-sm);padding:8px;width:100%;margin-bottom:8px;">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-p" onclick="importMachinesFromFile()">Importar Excel a Firebase</button>
         <span id="machines-status" style="font-size:12px;color:var(--muted);align-self:center;"></span>
       </div>
     </div>
@@ -2761,7 +2762,8 @@ function searchMachines(){
   const matches=machines.filter(m=>{
     const name=(m.n||m.name||'').toLowerCase();
     const code=(m.c||m.code||name).toLowerCase();
-    return name.includes(q)||code.includes(q);
+    const alias=(m.alias||'').toLowerCase();
+    return name.includes(q)||code.includes(q)||alias.includes(q);
   }).slice(0,15);
 
   if(!matches.length){
@@ -2777,7 +2779,10 @@ function searchMachines(){
     return`<div onclick="selectMachine(${encoded})"
       style="padding:10px 14px;background:var(--s1);border:1px solid var(--border);border-radius:var(--r-sm);margin-bottom:6px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:border-color .12s;"
       onmouseover="this.style.borderColor='var(--flex)'" onmouseout="this.style.borderColor='var(--border)'">
-      <span style="font-size:14px;">${mName}</span>
+      <div>
+        <div style="font-size:14px;">${m.alias||mName}</div>
+        ${m.alias?`<div style="font-size:11px;color:var(--dim);font-family:'Roboto Mono',monospace;">${mName}</div>`:''}
+      </div>
       <span style="font-family:'Roboto Mono',monospace;font-size:12px;color:var(--muted);">${mCode!==mName?mCode:''}</span>
     </div>`;
   }).join('');
@@ -2788,7 +2793,18 @@ function selectMachine(m){
   document.getElementById('qr-results').innerHTML='';
   const mName=m.n||m.name||'';
   const mCode=m.c||m.code||mName;
-  document.getElementById('qr-machine-name').textContent=mName;
+  const mAlias=m.alias||'';
+
+  // Show all info
+  document.getElementById('qr-machine-name').textContent=mAlias||mName;
+  const codeEl=document.getElementById('qr-machine-code');
+  codeEl.innerHTML=`
+    ${mAlias?`<div style="font-size:13px;color:var(--muted);font-family:'Roboto Mono',monospace;margin-bottom:4px;">${mName}</div>`:''}
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+      <span style="font-size:12px;color:var(--dim);">Código: <span style="color:var(--text);font-family:'Roboto Mono',monospace;">${mCode}</span></span>
+      ${mAlias?`<span style="font-size:12px;color:var(--dim);">Nombre común: <span style="color:var(--flex);font-weight:600;">${mAlias}</span></span>`:''}
+    </div>
+  `;
   document.getElementById('qr-machine-code').textContent=mCode;
 
   const wrap=document.getElementById('qr-canvas-wrap');
@@ -2810,6 +2826,71 @@ function downloadQR(){
   a.href=canvas.toDataURL();
   a.click();
 }
+
+async function importMachinesFromFile(){
+  if(!isTL()){ alert('Solo accesible para TL'); return; }
+  const fileInput=document.getElementById('machines-file');
+  const status=document.getElementById('machines-status');
+  if(!fileInput.files.length){ alert('Selecciona un archivo Excel'); return; }
+
+  status.textContent='Leyendo Excel...';
+  status.style.color='var(--muted)';
+
+  const reader=new FileReader();
+  reader.onload=async function(e){
+    try{
+      const data=new Uint8Array(e.target.result);
+      const wb=XLSX.read(data,{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+
+      // Parse rows: col0=ID, col1=name/code, col2=common name
+      const entries=[];
+      for(let i=1;i<rows.length;i++){
+        const row=rows[i];
+        const name=String(row[1]||'').trim();
+        const common=String(row[2]||'').trim();
+        if(!name) continue;
+        // Skip formula strings
+        if(common.startsWith('=')) continue;
+        const entry={n:name, c:name}; // code = name by default
+        if(common&&common!=='0'&&common!=='FALSE'&&common!=='None'){
+          entry.alias=common; // store common name for search
+        }
+        entries.push(entry);
+      }
+
+      status.textContent=`Leídas ${entries.length} entradas. Importando a Firebase...`;
+
+      // Delete existing chunks
+      const existing=await getDocs(collection(db,'machines_data'));
+      for(const d of existing.docs){ await deleteDoc(doc(db,'machines_data',d.id)); }
+
+      // Split into chunks of 12K and upload
+      const CHUNK=12000;
+      const chunks=[];
+      for(let i=0;i<entries.length;i+=CHUNK) chunks.push(entries.slice(i,i+CHUNK));
+
+      for(let i=0;i<chunks.length;i++){
+        await setDoc(doc(db,'machines_data','chunk_'+i),{entries:chunks[i],chunk:i});
+        status.textContent=`Importando chunk ${i+1}/${chunks.length}...`;
+      }
+
+      // Reload local cache
+      machines=[];
+      await loadMachines();
+      status.textContent=`✓ ${entries.length} activos importados correctamente`;
+      status.style.color='var(--flex)';
+      fileInput.value='';
+    }catch(err){
+      console.error(err);
+      status.textContent='Error: '+err.message;
+      status.style.color='var(--sick)';
+    }
+  };
+  reader.readAsArrayBuffer(fileInput.files[0]);
+}
+window.importMachinesFromFile=importMachinesFromFile;
 
 async function importMachinesPreloaded(){
   if(!isTL()){ alert('Solo accesible para TL'); return; }
