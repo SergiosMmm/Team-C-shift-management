@@ -1153,8 +1153,13 @@ async function initApp(){
 
   setLoading('Conectando con Firebase...');
   try{
-    // Load PINs from Firebase config
+    // Load PINs first — needed for login
     await loadPINs();
+    if(!currentUser){
+      // Show login is ready
+      const err=document.getElementById('login-err');
+      if(err) err.textContent='';
+    }
 
     // Load machines for QR
     loadMachines(); // async, non-blocking
@@ -2660,7 +2665,7 @@ function selectRole(role, el){
   selectedRole=role;
 }
 
-function doLogin(){
+async function doLogin(){
   const name=document.getElementById('login-name').value.trim();
   const pin=document.getElementById('login-pin').value.trim();
   const err=document.getElementById('login-err');
@@ -2668,10 +2673,20 @@ function doLogin(){
   if(!name){ err.textContent='Introduce tu nombre'; return; }
   if(!pin){ err.textContent='Introduce tu PIN'; return; }
 
-  const tlPin=window._TL_PIN||TL_PIN;
-  const techPin=window._TECH_PIN||TECH_PIN;
+  // If PINs not loaded yet, try loading them now
+  if(!window._TL_PIN&&!window._TECH_PIN){
+    err.textContent='Cargando configuración...';
+    await loadPINs();
+  }
 
-  // Determine role from PIN
+  const tlPin=window._TL_PIN;
+  const techPin=window._TECH_PIN;
+
+  if(!tlPin&&!techPin){
+    err.textContent='Error: no se pudieron cargar los PINs desde Firebase';
+    return;
+  }
+
   if(pin===tlPin){
     selectedRole='TL';
   } else if(pin===techPin){
