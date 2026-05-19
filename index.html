@@ -377,8 +377,24 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
   .area-col-body{grid-template-columns:1fr;}
   .techs-panel{border-right:none;border-bottom:1px solid var(--border);}
   .ss-layout{grid-template-columns:1fr;}
-  .main{padding:10px;}
+  .main{padding:8px;}
   .sheet{border-radius:14px 14px 0 0;}
+  /* Task table mobile */
+  .task-table .col-date{display:none;}
+  .task-table .col-time{display:none;}
+  .task-table th:first-child{display:none;}
+  .task-table .col-tech{max-width:90px;overflow:hidden;}
+  .task-table .col-title{min-width:120px;}
+  .task-table .note-txt{display:none;}
+  /* Techs chips wrap better */
+  .techs-chips{gap:4px;}
+  .tech-chip-inline{font-size:11px;padding:2px 6px;}
+  /* Hide vista filter label */
+  .vista-label{display:none;}
+  /* All tasks section more compact */
+  .at-woid{min-width:60px!important;font-size:10px!important;}
+  .at-filters{gap:4px;}
+  .at-btn{font-size:10px;padding:3px 7px;}
 }
 </style>
 </head>
@@ -433,7 +449,7 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
 
   <!-- Area filter -->
   <div style="display:flex;gap:6px;margin-bottom:10px;align-items:center;">
-    <span style="font-size:11px;color:var(--muted);font-family:'Roboto Mono',monospace;">VISTA:</span>
+    <span class="vista-label" style="font-size:11px;color:var(--muted);font-family:'Roboto Mono',monospace;">VISTA:</span>
     <button class="fb" id="af-both" onclick="setAreaFilter('both',this)" style="border-color:var(--flex);color:var(--flex);">GOH + FP</button>
     <button class="fb" id="af-goh" onclick="setAreaFilter('goh',this)">Solo GOH</button>
     <button class="fb" id="af-fp" onclick="setAreaFilter('fp',this)">Solo FP</button>
@@ -2265,6 +2281,11 @@ function setAreaFilter(f, el){
   }
 }
 window.setAreaFilter=setAreaFilter;
+
+// On mobile, default to GOH only
+if(window.innerWidth<=640){
+  setTimeout(()=>{ const b=document.getElementById('af-goh'); if(b) setAreaFilter('goh',b); },200);
+}
 
 function renderTasksView(){
   renderAreaTechs('GOH','goh-techs','goh-avail-cnt');
