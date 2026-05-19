@@ -128,8 +128,9 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
 .task-table th{font-size:10px;font-family:'Roboto Mono',monospace;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:5px 8px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap;background:var(--s1);}
 .task-table td{padding:5px 8px;border-bottom:1px solid var(--border);vertical-align:middle;}
 .task-table tr:last-child td{border-bottom:none;}
-.task-table tbody tr{cursor:pointer;transition:background .1s;}
+.task-table tbody tr{cursor:pointer;transition:background .1s;-webkit-tap-highlight-color:rgba(86,211,100,.15);}
 .task-table tbody tr:hover td{background:var(--s2);}
+.task-table tbody tr:active td{background:var(--s2)!important;}
 .task-table .col-title{white-space:normal;min-width:180px;}
 .task-table .col-date{font-family:'Roboto Mono',monospace;font-size:10px;width:54px;white-space:nowrap;line-height:1.4;}
 .task-table .col-tech{width:120px;}
@@ -172,6 +173,9 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
 .ss-zone-head{display:flex;flex-direction:column;align-items:center;gap:4px;padding-bottom:9px;margin-bottom:9px;border-bottom:1px solid var(--border);}
 .ss-zone-label{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-family:'Roboto Mono',monospace;text-align:center;}
 .ss-zone-count{font-family:'Roboto Mono',monospace;font-size:11px;padding:1px 7px;border-radius:20px;background:var(--s2);color:var(--muted);}
+.ss-tbl-zone{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;font-family:'Roboto Mono',monospace;padding:6px 10px;border-bottom:1px solid var(--border);vertical-align:top;white-space:nowrap;}
+.ss-tbl-name{padding:6px 10px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle;}
+.ss-tbl-ppm{padding:4px 10px;border-bottom:1px solid var(--border);vertical-align:middle;}
 .ss-tech-list{display:flex;flex-direction:column;gap:4px;}
 .ss-tech{font-size:13px;display:flex;align-items:center;gap:8px;justify-content:space-between;padding:2px 0;}
 .ss-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
@@ -385,7 +389,7 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
   .task-table .col-date span:first-child{display:none;} /* hide date on mobile, keep time */
   .task-table .col-tech{max-width:90px;overflow:hidden;}
   .task-table .col-title{min-width:120px;}
-  .task-table .note-txt{display:none;}
+  .task-table .note-txt{display:block;font-size:10px;}  /* show note on mobile */
   /* Techs chips wrap better */
   .techs-chips{gap:4px;}
   .tech-chip-inline{font-size:11px;padding:2px 6px;}
@@ -1209,7 +1213,7 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
   <div id="mp-extras-section" style="display:none;">
     <div class="mp-section-title" style="color:var(--osr);">Extras del turno <span id="mp-extras-count" style="font-family:&#39;Roboto Mono&#39;,monospace;font-size:11px;opacity:.7;"></span></div>
     <div class="mp-wrap" style="margin-bottom:16px;">
-      <table class="mp-table">
+      <table class="mp-table" style="min-width:700px;">
         <thead><tr>
           <th style="min-width:200px;">Nombre completo</th>
           <th style="min-width:90px;">Zona</th>
@@ -1223,8 +1227,8 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
   <!-- SECTION 3: 5/2 -->
   <div id="mp-52-section" style="display: block;">
     <div class="mp-section-title" style="color:var(--osr);">Extras en turno <span style="font-family:&#39;Roboto Mono&#39;,monospace;font-size:11px;opacity:.7;">(asigna zona para que aparezcan como disponibles)</span></div>
-    <div class="mp-wrap">
-      <table class="mp-table">
+    <div class="mp-wrap" style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+      <table class="mp-table" style="min-width:700px;">
         <thead><tr>
           <th style="min-width:200px;">Nombre completo</th>
           <th style="min-width:120px;">Zona (asignar si necesario)</th>
@@ -1310,7 +1314,7 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
     </div>
   </div>
 
-  <div class="mp-wrap">
+  <div class="mp-wrap" style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
     <table class="mp-table" id="workers-table">
       <thead><tr>
         <th>Nombre</th>
@@ -1807,8 +1811,8 @@ function renderGeneralTasks(){
     const ipDur=t.inProgressAt?fmtDurG(t.inProgressAt,t.doneAt||null):'';
     const dotColor=dotColors[t.status]||'var(--dim)';
     const src=t.source==='PLANNER'?`<span class="src-planner" style="font-size:9px;padding:0 4px;margin-left:3px;">PPM</span>`:'';
-    return `<tr onclick="isTL()&&openModal('${t.id}')">
-      <td class="col-date">${fmtTaskDate(t.createdAt,'time')}${src}</td>
+    return `<tr onclick="isTL()&&openModal('${t.id}')" style="cursor:pointer;">
+      <td class="col-date" onclick="isTL()&&openModal('${t.id}')">${fmtTaskDate(t.createdAt,'time')}${src}</td>
       <td class="col-title"><span style="display:inline-flex;align-items:center;gap:5px;">
         <span class="st-dot" style="background:${dotColor};${t.status==='In Progress'?'box-shadow:0 0 4px '+dotColor+';':''}"></span>
         <span style="font-weight:500;">${t.title||'Sin descripción'}</span>
@@ -2240,8 +2244,8 @@ function renderAreaTasks(areaZone, containerId){
     const timeVal=ipDur||age;
     const timeColor=ipDur?'var(--busy)':'var(--dim)';
 
-    return `<tr onclick="isTL()&&openModal('${t.id}')">
-      <td class="col-date">
+    return `<tr onclick="isTL()&&openModal('${t.id}')" style="cursor:pointer;">
+      <td class="col-date" onclick="isTL()&&openModal('${t.id}')">
         <span style="color:var(--dim);font-size:9px;display:block;line-height:1.2;">${fmtTaskDate(t.createdAt,'date')}</span>
         <span style="color:var(--muted);font-size:11px;font-weight:500;">${fmtTaskDate(t.createdAt,'time')}</span>
       </td>
@@ -2323,7 +2327,7 @@ function renderAllTasks(){
         const rowLabel = createdTime || '—';
         const requesterChip = t.requestedBy ? `<span style="font-size:11px;color:var(--muted);padding:3px 8px;border-radius:999px;border:1px solid var(--border);background:rgba(255,255,255,.04);white-space:nowrap;">${t.requestedBy}</span>` : '';
 
-        return `<div class="at-row" style="position:relative;" onclick="isTL()&&openModal('${t.id}')">
+        return `<div class="at-row" style="position:relative;cursor:pointer;-webkit-tap-highlight-color:rgba(86,211,100,.15);" onclick="isTL()&&openModal('${t.id}')">
           <div class="at-woid" style="color:var(--dim);min-width:80px;font-family:'Roboto Mono',monospace;font-size:11px;">${fmtTaskDate(t.createdAt,'datetime')}</div>
           <div style="flex:1;min-width:0;">
             <div class="at-title">${t.title||'<em style="color:var(--muted)">Sin descripción</em>'} <span style="font-size:11px;color:var(--muted)">[${zones}]</span></div>
@@ -2442,35 +2446,56 @@ function renderSS(){
   `;
 
   const ZONE_DEFS = [
+    {label:'TL',        key:'TL',        color:'var(--tl)',   showPPM:false},
+    {label:'SP / FLOW', key:'SP / FLOW', color:'var(--osr)',  showPPM:false},
     {label:'GOH Area',  key:'GOH Area',  color:'var(--goh)',  showPPM:true},
     {label:'FP Area',   key:'FP Area',   color:'var(--fp)',   showPPM:true},
     {label:'FLEX',      key:'FLEX',      color:'var(--flex)', showPPM:true},
     {label:'GOH Silo',  key:'GOH Silo',  color:'var(--goh)',  showPPM:false},
     {label:'FP Silo',   key:'FP Silo',   color:'var(--fp)',   showPPM:false},
-    {label:'TL',        key:'TL',        color:'var(--tl)',   showPPM:false},
     {label:'OSR',       key:'OSR',       color:'var(--osr)',  showPPM:false},
-    {label:'SP + FLOW', key:'SP / FLOW', color:'var(--osr)',  showPPM:false},
     {label:'Trainer',   key:'Trainer',   color:'var(--busy)', showPPM:false},
+    {label:'Hols/Sick', key:'Holidays / Sick', color:'var(--dim)', showPPM:false},
   ];
-  const cards = ZONE_DEFS.map(z=>{
-    const techs = SS_ZONES[z.key]?.techs||[];
-    const techRows = techs.map(name=>{
-      const checkbox = z.showPPM && isTechnician(name)
-        ? `<label class="ss-ppm-label"><input type="checkbox" class="ss-ppm-checkbox" ${isPPMAssigned(name)?'checked':''} onclick="event.stopPropagation();togglePPMAssigned(${JSON.stringify(name)})">PPM</label>`
+
+  // Build flat rows: one row per technician
+  const rows=[];
+  ZONE_DEFS.forEach(z=>{
+    const techs=SS_ZONES[z.key]?.techs||[];
+    techs.forEach((name,i)=>{
+      const ppmCheck = z.showPPM && isTechnician(name)
+        ? `<label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:11px;color:var(--muted);"><input type="checkbox" ${isPPMAssigned(name)?'checked':''} onclick="event.stopPropagation();togglePPMAssigned(${JSON.stringify(name)})"> PPM</label>`
         : '';
-      return `<div class="ss-tech"><span style="display:flex;align-items:center;gap:6px;min-width:0;"><span class="ss-dot" style="background:${z.color};flex-shrink:0;"></span>${name}</span>${checkbox}</div>`;
-    }).join('');
-    return `<div class="ss-zone">
-      <div class="ss-zone-head">
-        <span class="ss-zone-label" style="color:${z.color}">${z.label}</span>
-        <span class="ss-zone-count">${techs.length}</span>
-      </div>
-      <div class="ss-tech-list">${techRows||'<span style="font-size:12px;color:var(--dim);">—</span>'}</div>
-    </div>`;
-  }).join('');
+      rows.push(`<tr>
+        ${i===0?`<td class="ss-tbl-zone" rowspan="${techs.length}" style="color:${z.color};border-left:3px solid ${z.color};">${z.label}</td>`:''}
+        <td class="ss-tbl-name">
+          <span style="display:flex;align-items:center;gap:6px;">
+            <span style="width:7px;height:7px;border-radius:50%;background:${z.color};flex-shrink:0;"></span>
+            ${name}
+          </span>
+        </td>
+        <td class="ss-tbl-ppm">${ppmCheck}</td>
+      </tr>`);
+    });
+    if(!techs.length){
+      rows.push(`<tr>
+        <td class="ss-tbl-zone" style="color:${z.color};border-left:3px solid ${z.color};">${z.label}</td>
+        <td class="ss-tbl-name" style="color:var(--dim);">—</td>
+        <td class="ss-tbl-ppm"></td>
+      </tr>`);
+    }
+  });
+
   document.getElementById('ss-table-wrap').innerHTML=`
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;">
-      ${cards}
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <thead><tr>
+          <th style="font-size:10px;font-family:'Roboto Mono',monospace;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:6px 10px;border-bottom:1px solid var(--border);text-align:left;width:110px;background:var(--s1);">Zona</th>
+          <th style="font-size:10px;font-family:'Roboto Mono',monospace;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:6px 10px;border-bottom:1px solid var(--border);text-align:left;background:var(--s1);">Técnico</th>
+          <th style="font-size:10px;font-family:'Roboto Mono',monospace;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:6px 10px;border-bottom:1px solid var(--border);text-align:left;width:80px;background:var(--s1);">PPM</th>
+        </tr></thead>
+        <tbody>${rows.join('')}</tbody>
+      </table>
     </div>`;
 
   document.getElementById('checklist').innerHTML=CHECKLIST_ITEMS.map((item,i)=>`
