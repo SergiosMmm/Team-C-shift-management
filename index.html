@@ -130,12 +130,13 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
 .task-table tr:last-child td{border-bottom:none;}
 .task-table tbody tr{cursor:pointer;transition:background .1s;}
 .task-table tbody tr:hover td{background:var(--s2);}
-.task-table .col-title{white-space:normal;max-width:300px;}
-.task-table .col-woid{font-family:'Roboto Mono',monospace;font-size:10px;color:var(--dim);width:50px;white-space:nowrap;}
-.task-table .col-tech{width:130px;}
-.task-table .col-time{font-family:'Roboto Mono',monospace;font-size:11px;width:60px;white-space:nowrap;}
-.task-table .col-del{width:24px;text-align:center;}
-.task-table .col-st{width:110px;white-space:nowrap;}
+.task-table .col-title{white-space:normal;min-width:180px;}
+.task-table .col-date{font-family:'Roboto Mono',monospace;font-size:10px;color:var(--dim);width:72px;white-space:nowrap;}
+.task-table .col-tech{width:120px;}
+.task-table .col-time{font-family:'Roboto Mono',monospace;font-size:11px;width:56px;white-space:nowrap;text-align:right;}
+.task-table .col-del{width:22px;text-align:center;}
+.task-table .col-st{width:100px;white-space:nowrap;}
+.task-table .note-txt{color:var(--muted);font-size:11px;font-style:italic;display:block;margin-top:1px;white-space:normal;line-height:1.3;}
 .st-dot{width:7px;height:7px;border-radius:50%;display:inline-block;flex-shrink:0;}
 .st-report{background:var(--osr-bg);color:var(--osr);}
 .st-reminder{background:var(--tl-bg);color:var(--tl);}
@@ -430,7 +431,15 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
 <!-- ======== TAREAS ======== -->
 <div class="view active" id="view-tasks">
 
-  <div class="area-cols">
+  <!-- Area filter -->
+  <div style="display:flex;gap:6px;margin-bottom:10px;align-items:center;">
+    <span style="font-size:11px;color:var(--muted);font-family:'Roboto Mono',monospace;">VISTA:</span>
+    <button class="fb" id="af-both" onclick="setAreaFilter('both',this)" style="border-color:var(--flex);color:var(--flex);">GOH + FP</button>
+    <button class="fb" id="af-goh" onclick="setAreaFilter('goh',this)">Solo GOH</button>
+    <button class="fb" id="af-fp" onclick="setAreaFilter('fp',this)">Solo FP</button>
+  </div>
+
+  <div class="area-cols" id="area-cols-wrap">
 
     <!-- GOH COLUMN -->
     <div class="area-col">
@@ -608,15 +617,20 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
         <button class="at-btn" onclick="setATDate(getCurrentShiftDayKey())" style="padding:4px 10px;">Hoy</button>
       </div>
       <div class="at-filters">
-        <button class="at-btn on" onclick="setAF(&#39;all&#39;,this)">Todas</button>
-        <button class="at-btn" onclick="setAF(&#39;Done&#39;,this)">Done</button>
-        <button class="at-btn" onclick="setAF(&#39;In Progress&#39;,this)">In Progress</button>
-        <button class="at-btn" onclick="setAF(&#39;Monitoring&#39;,this)">Monitoring</button>
-        <button class="at-btn" onclick="setAF(&#39;pending&#39;,this)">Pending</button>
-        <button class="at-btn" onclick="setAF(&#39;Report Next Shift&#39;,this)">Report Next Shift</button>
-        <button class="at-btn" onclick="setAF(&#39;Reminder&#39;,this)">Reminder</button>
-        <button class="at-btn" onclick="setAF(&#39;Shift Handover&#39;,this)">Shift Handover</button>
-        <button class="at-btn" onclick="setAF(&#39;PLANNER&#39;,this)">PLANNER</button>
+        <button class="at-btn" onclick="setZoneFilter('all',this)" id="zf-all" style="border-color:var(--flex);color:var(--flex);">Todo</button>
+        <button class="at-btn" onclick="setZoneFilter('GOH',this)" id="zf-goh">GOH</button>
+        <button class="at-btn" onclick="setZoneFilter('FP',this)" id="zf-fp">FP</button>
+      </div>
+      <div class="at-filters">
+        <button class="at-btn on" onclick="setAF('all',this)">Todas</button>
+        <button class="at-btn" onclick="setAF('Done',this)">Done</button>
+        <button class="at-btn" onclick="setAF('In Progress',this)">In Progress</button>
+        <button class="at-btn" onclick="setAF('Monitoring',this)">Monitoring</button>
+        <button class="at-btn" onclick="setAF('pending',this)">Pending</button>
+        <button class="at-btn" onclick="setAF('Report Next Shift',this)">Report Next Shift</button>
+        <button class="at-btn" onclick="setAF('Reminder',this)">Reminder</button>
+        <button class="at-btn" onclick="setAF('Shift Handover',this)">Shift Handover</button>
+        <button class="at-btn" onclick="setAF('PLANNER',this)">PLANNER</button>
       </div>
     </div>
     <div class="at-search"><input type="text" id="at-search" placeholder="Buscar WO, tarea o técnico..." oninput="renderAllTasks()"></div>
@@ -1683,6 +1697,39 @@ function parseTaskDate(value){
   return null;
 }
 
+function fmtTaskDate(v, mode='datetime'){
+  if(!v) return '';
+  let d;
+  if(typeof v==='string') d=new Date(v);
+  else if(v instanceof Date) d=v;
+  else if(typeof v.toDate==='function') d=v.toDate();
+  else if(v.seconds) d=new Date(v.seconds*1000);
+  else return '';
+  if(isNaN(d.getTime())) return '';
+  const day=d.getDate().toString().padStart(2,'0');
+  const mon=(d.getMonth()+1).toString().padStart(2,'0');
+  const hh=d.getHours().toString().padStart(2,'0');
+  const mm=d.getMinutes().toString().padStart(2,'0');
+  if(mode==='date') return `${day}/${mon}`;
+  return `${day}/${mon} ${hh}:${mm}`;
+}
+
+function getTaskDayIndex(t){
+  const toDate=v=>{
+    if(!v) return new Date(0);
+    if(typeof v==='string') return new Date(v);
+    if(v instanceof Date) return v;
+    if(typeof v.toDate==='function') return v.toDate();
+    return new Date(v.seconds*1000);
+  };
+  const todayKey=getCurrentShiftDayKey();
+  const todayTasks=[...TASKS]
+    .filter(t2=>getTaskDayKey(t2)===todayKey)
+    .sort((a,b)=>toDate(a.createdAt)-toDate(b.createdAt));
+  const idx=todayTasks.findIndex(t2=>t2.id===t.id);
+  return idx>=0?idx+1:'?';
+}
+
 function getTaskDayKey(task){
   const created = parseTaskDate(task.createdAt);
   if(!created) return '';
@@ -1701,6 +1748,15 @@ function getCurrentShiftDayKey(){
   }
   return formatDateKey(day);
 }
+
+let zoneFilter='all';
+function setZoneFilter(z, el){
+  zoneFilter=z;
+  document.querySelectorAll('.fb[id^="zf-"]').forEach(b=>{b.style.borderColor='';b.style.color='';});
+  el.style.borderColor='var(--flex)'; el.style.color='var(--flex)';
+  renderAllTasks();
+}
+window.setZoneFilter=setZoneFilter;
 
 function setATDate(value){
   if(!value){
@@ -1852,7 +1908,7 @@ function openNewTask(zone){
   };
   isDirty=false;
   document.getElementById('btn-save-task').style.display='none';
-  document.getElementById('m-woid').textContent='#NEW';
+  document.getElementById('m-woid').textContent='';
   document.getElementById('m-edit-title').value='';
   document.getElementById('m-edit-note').value='';
   document.getElementById('m-edit-zona').value=zone||'';
@@ -2089,12 +2145,12 @@ function renderAreaTasks(areaZone, containerId){
     const timeColor=ipDur?'var(--busy)':'var(--dim)';
 
     return `<tr onclick="isTL()&&openModal('${t.id}')">
-      <td class="col-woid">#${t.woid}${src}</td>
+      <td class="col-date">${fmtTaskDate(t.createdAt,'datetime')}${src}</td>
       <td class="col-title">
         <span style="display:inline-flex;align-items:center;gap:5px;">
           <span class="st-dot" style="background:${dotColor};${t.status==='In Progress'?'box-shadow:0 0 4px '+dotColor+';':''}"></span>
           <span style="font-weight:500;font-size:13px;">${t.title||'<em style="color:var(--muted);font-weight:400;">Sin descripción</em>'}</span>
-          ${t.note?`<span style="color:var(--dim);font-size:11px;font-style:italic;">· ${t.note.substring(0,25)}${t.note.length>25?'…':''}</span>`:''}
+        </span>${t.note?`<span class="note-txt">${t.note}</span>`:''}
         </span>
       </td>
       <td class="col-tech">${techs}</td>
@@ -2107,7 +2163,7 @@ function renderAreaTasks(areaZone, containerId){
   document.getElementById(containerId).innerHTML=`
     <table class="task-table">
       <thead><tr>
-        <th class="col-woid">WO</th>
+        <th class="col-date">Hora</th>
         <th class="col-title">Descripción</th>
         <th class="col-tech">Técnico</th>
         <th class="col-st">Estado</th>
@@ -2123,9 +2179,10 @@ function renderAllTasks(){
   const tasks = TASKS.filter(t=>{
     const taskDay = getTaskDayKey(t);
     const dayMatch = !selectedTaskDay || taskDay===selectedTaskDay;
-    const mq = !q||(t.woid+t.title+t.techs.join(' ')).toLowerCase().includes(q);
+    const mq = !q||(t.title+t.techs.join(' ')+t.note).toLowerCase().includes(q);
     const mf = atFilter==='all'||t.status===atFilter||(atFilter==='PLANNER'&&t.source==='PLANNER');
-    return dayMatch && mq && mf;
+    const mz = zoneFilter==='all'||t.zones.includes(zoneFilter)||(zoneFilter==='GOH'&&t.zones.includes('FLEX'))||(zoneFilter==='FP'&&t.zones.includes('FLEX'));
+    return dayMatch && mq && mf && mz;
   });
   if(!selectedTaskDay){
     selectedTaskDay = getCurrentShiftDayKey();
@@ -2168,7 +2225,7 @@ function renderAllTasks(){
         const requesterChip = t.requestedBy ? `<span style="font-size:11px;color:var(--muted);padding:3px 8px;border-radius:999px;border:1px solid var(--border);background:rgba(255,255,255,.04);white-space:nowrap;">${t.requestedBy}</span>` : '';
 
         return `<div class="at-row" style="position:relative;" onclick="isTL()&&openModal('${t.id}')">
-          <div class="at-woid">${rowLabel}</div>
+          <div class="at-woid" style="color:var(--dim);min-width:80px;font-family:'Roboto Mono',monospace;font-size:11px;">${fmtTaskDate(t.createdAt,'datetime')}</div>
           <div style="flex:1;min-width:0;">
             <div class="at-title">${t.title||'<em style="color:var(--muted)">Sin descripción</em>'} <span style="font-size:11px;color:var(--muted)">[${zones}]</span></div>
             ${meta?`<div style="font-size:11px;color:var(--muted);margin-top:4px;">${meta}</div>`:''}
@@ -2188,6 +2245,26 @@ function setAF(f,el){
   el.classList.add('on');
   renderAllTasks();
 }
+
+let areaFilter='both';
+function setAreaFilter(f, el){
+  areaFilter=f;
+  document.querySelectorAll('.fb[id^="af-"]').forEach(b=>{b.style.borderColor='';b.style.color='';});
+  el.style.borderColor='var(--flex)'; el.style.color='var(--flex)';
+  const wrap=document.getElementById('area-cols-wrap');
+  const cols=wrap?wrap.querySelectorAll('.area-col'):[];
+  if(f==='both'){
+    wrap.style.gridTemplateColumns='1fr 1fr';
+    cols.forEach(c=>c.style.display='');
+  } else if(f==='goh'){
+    wrap.style.gridTemplateColumns='1fr';
+    cols.forEach((c,i)=>c.style.display=i===0?'':'none');
+  } else {
+    wrap.style.gridTemplateColumns='1fr';
+    cols.forEach((c,i)=>c.style.display=i===1?'':'none');
+  }
+}
+window.setAreaFilter=setAreaFilter;
 
 function renderTasksView(){
   renderAreaTechs('GOH','goh-techs','goh-avail-cnt');
@@ -3225,7 +3302,7 @@ function openModal(id){
   isDirty=false;
   document.getElementById('btn-save-task').style.display='none';
 
-  document.getElementById('m-woid').textContent='#'+(t.woid||t.id);
+  document.getElementById('m-woid').textContent='#'+getTaskDayIndex(t);
   document.getElementById('m-edit-title').value=t.title||'';
   document.getElementById('m-edit-note').value=t.note||'';
   document.getElementById('m-edit-zona').value=(t.zones&&t.zones[0])||'';
