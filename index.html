@@ -106,7 +106,7 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
 .ac-mix{background:rgba(227,179,65,.12);color:var(--busy);}
 
 /* Tasks panel */
-.tasks-panel{padding:10px 12px;overflow-y:auto;max-height:420px;flex:1;}
+.tasks-panel{padding:10px 12px;overflow-y:visible;flex:1;}
 .task-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-sm);padding:11px 13px;margin-bottom:8px;cursor:pointer;transition:border-color .12s,transform .1s;}
 .task-card:hover{border-color:var(--border2);transform:translateY(-1px);}
 .task-woid{font-family:'Roboto Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:3px;display:flex;align-items:center;gap:5px;}
@@ -1994,9 +1994,15 @@ async function initApp(){
 
 initApp();
 function renderAreaTechs(areaZone, containerId, cntId){
-  const mainTechs=TECHS.filter(t=>(t.zone===areaZone||t.zone==='FLEX')&&t.sub!=='S GOH'&&t.sub!=='S FP');
+  // Only show techs working today if turno is loaded
+  const mainTechs=TECHS.filter(t=>{
+    if(t.sub==='S GOH'||t.sub==='S FP') return false;
+    if(t.zone!==areaZone&&t.zone!=='FLEX') return false;
+    if(pasteApplied&&!todayData[t.name]) return false; // absent today
+    return true;
+  });
   const paSub=areaZone==='GOH'?'S GOH':'S FP';
-  const paTechs=TECHS.filter(t=>t.sub===paSub);
+  const paTechs=TECHS.filter(t=>t.sub===paSub&&(!pasteApplied||todayData[t.name]));
 
   const free=mainTechs.filter(t=>techStatus(t.name).count===0);
   document.getElementById(cntId).innerHTML=
@@ -2018,7 +2024,14 @@ function renderAreaTechs(areaZone, containerId, cntId){
     </span>`;
   }
 
-  let html=`<div class="techs-chips">${mainTechs.map(t=>techChip(t)).join('')}`;
+  // Sort: free first, then by pending task count ascending
+  const sortedTechs=[...mainTechs].sort((a,b)=>{
+    const sa=techStatus(a.name), sb=techStatus(b.name);
+    if(sa.count===0&&sb.count>0) return -1;
+    if(sa.count>0&&sb.count===0) return 1;
+    return sa.count-sb.count;
+  });
+  let html=`<div class="techs-chips">${sortedTechs.map(t=>techChip(t)).join('')}`;
   if(paTechs.length){
     html+=`<span style="font-size:10px;color:var(--dim);margin:0 2px;">·</span>`;
     html+=paTechs.map(t=>techChip(t,true)).join('');
@@ -3407,6 +3420,8 @@ async function saveTaskEdits(){
         fecha,
         createdAt:  nowISO(),
         createdBy:  currentUser?.name||'TL',
+        inProgressAt: (selectedTask.status==='In Progress')?nowISO():null,
+        inProgressBy: (selectedTask.status==='In Progress')?(currentUser?.name||'TL'):null,
       };
       const fbId=await fbAddTask(fbData);
       task._fbId=fbId;
@@ -3804,6 +3819,7 @@ function applyTechRestrictions(){
 }
 
 window.isTL=isTL;
+window.setATDate=setATDate;
 window.selectRole=selectRole;
 window.doLogin=doLogin;
 window.doLogout=doLogout;
