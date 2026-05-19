@@ -131,7 +131,7 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
 .task-table tbody tr{cursor:pointer;transition:background .1s;}
 .task-table tbody tr:hover td{background:var(--s2);}
 .task-table .col-title{white-space:normal;min-width:180px;}
-.task-table .col-date{font-family:'Roboto Mono',monospace;font-size:10px;color:var(--dim);width:72px;white-space:nowrap;}
+.task-table .col-date{font-family:'Roboto Mono',monospace;font-size:10px;width:54px;white-space:nowrap;line-height:1.4;}
 .task-table .col-tech{width:120px;}
 .task-table .col-time{font-family:'Roboto Mono',monospace;font-size:11px;width:56px;white-space:nowrap;text-align:right;}
 .task-table .col-del{width:22px;text-align:center;}
@@ -380,9 +380,8 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
   .main{padding:8px;}
   .sheet{border-radius:14px 14px 0 0;}
   /* Task table mobile */
-  .task-table .col-date{display:none;}
+  .task-table .col-date span:first-child{display:none;} /* hide date, keep time */
   .task-table .col-time{display:none;}
-  .task-table th:first-child{display:none;}
   .task-table .col-tech{max-width:90px;overflow:hidden;}
   .task-table .col-title{min-width:120px;}
   .task-table .note-txt{display:none;}
@@ -1727,6 +1726,7 @@ function fmtTaskDate(v, mode='datetime'){
   const hh=d.getHours().toString().padStart(2,'0');
   const mm=d.getMinutes().toString().padStart(2,'0');
   if(mode==='date') return `${day}/${mon}`;
+  if(mode==='time') return `${hh}:${mm}`;
   return `${day}/${mon} ${hh}:${mm}`;
 }
 
@@ -2161,7 +2161,10 @@ function renderAreaTasks(areaZone, containerId){
     const timeColor=ipDur?'var(--busy)':'var(--dim)';
 
     return `<tr onclick="isTL()&&openModal('${t.id}')">
-      <td class="col-date">${fmtTaskDate(t.createdAt,'datetime')}${src}</td>
+      <td class="col-date">
+        <span style="color:var(--dim);font-size:9px;display:block;line-height:1.2;">${fmtTaskDate(t.createdAt,'date')}</span>
+        <span style="color:var(--muted);font-size:11px;font-weight:500;">${fmtTaskDate(t.createdAt,'time')}</span>
+      </td>
       <td class="col-title">
         <span style="display:inline-flex;align-items:center;gap:5px;">
           <span class="st-dot" style="background:${dotColor};${t.status==='In Progress'?'box-shadow:0 0 4px '+dotColor+';':''}"></span>
@@ -2170,7 +2173,6 @@ function renderAreaTasks(areaZone, containerId){
         </span>
       </td>
       <td class="col-tech">${techs}</td>
-      <td class="col-st">${stTag(t.status)}</td>
       <td class="col-time" style="color:${timeColor};">${timeVal}</td>
       <td class="col-del"><span onclick="event.stopPropagation();quickDelete('${t.id}')" style="color:var(--dim);cursor:pointer;font-size:12px;padding:2px 4px;">✕</span></td>
     </tr>`;
@@ -2182,7 +2184,6 @@ function renderAreaTasks(areaZone, containerId){
         <th class="col-date">Hora</th>
         <th class="col-title">Descripción</th>
         <th class="col-tech">Técnico</th>
-        <th class="col-st">Estado</th>
         <th class="col-time">Tiempo</th>
         <th class="col-del"></th>
       </tr></thead>
