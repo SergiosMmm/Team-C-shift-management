@@ -379,9 +379,10 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
   .ss-layout{grid-template-columns:1fr;}
   .main{padding:8px;}
   .sheet{border-radius:14px 14px 0 0;}
-  /* Task table mobile */
-  .task-table .col-date span:first-child{display:none;} /* hide date, keep time */
-  .task-table .col-time{display:none;}
+  /* Task table mobile — horizontal scroll */
+  .tasks-panel{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .task-table{min-width:480px;}
+  .task-table .col-date span:first-child{display:none;} /* hide date on mobile, keep time */
   .task-table .col-tech{max-width:90px;overflow:hidden;}
   .task-table .col-title{min-width:120px;}
   .task-table .note-txt{display:none;}
@@ -620,11 +621,20 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
 
   </div>
 
+  <!-- GENERAL TASKS — PPM, sin área asignada -->
+  <div style="background:var(--s1);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:12px;">
+    <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+      <span style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;font-family:'Roboto Mono',monospace;">General / PPM</span>
+      <button class="new-task-btn" onclick="openNewTask('GENERAL')">+ Tarea</button>
+    </div>
+    <div id="general-tasks" style="padding:4px 0;"></div>
+  </div>
+
   <!-- ALL TASKS -->
   <div class="all-tasks-wrap">
-    <div class="all-tasks-head">
-      <span class="all-tasks-title">Todas las tareas del turno</span>
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+    <div class="all-tasks-head" onclick="toggleTodasTareas(this)" style="cursor:pointer;">
+      <span class="all-tasks-title">Todas las tareas del turno <span id="todas-arrow" style="font-size:12px;color:var(--muted);margin-left:6px;">▼</span></span>
+      <div id="todas-filters" style="display:none;align-items:center;gap:8px;flex-wrap:wrap;">
         <label style="font-size:11px;color:var(--muted);font-family:&#39;Roboto Mono&#39;,monospace;display:flex;align-items:center;gap:6px;">
           Día
           <input id="at-date" type="date" style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-size:12px;color:var(--text);outline:none;" onchange="setATDate(this.value)">
@@ -648,8 +658,10 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
         <button class="at-btn" onclick="setAF('PLANNER',this)">PLANNER</button>
       </div>
     </div>
+    <div id="todas-body" style="display:none;">
     <div class="at-search"><input type="text" id="at-search" placeholder="Buscar WO, tarea o técnico..." oninput="renderAllTasks()"></div>
     <div class="at-list" id="at-list"><div style="padding:20px;text-align:center;color:var(--dim);font-size:12px;">Sin resultados</div></div>
+    </div>
   </div>
 
 </div>
@@ -1765,6 +1777,74 @@ function getCurrentShiftDayKey(){
   return formatDateKey(day);
 }
 
+let todasOpen=false;
+
+function renderGeneralTasks(){
+  const el=document.getElementById('general-tasks');
+  if(!el) return;
+  const tasks=TASKS.filter(t=>
+    t.status!=='Done'&&
+    (t.zones.length===0||t.zones.includes('GENERAL')||
+    (t.source==='PLANNER'&&!t.zones.some(z=>['GOH','FP','FLEX'].includes(z))))
+  );
+  if(!tasks.length){
+    el.innerHTML='<div style="padding:10px 14px;color:var(--dim);font-size:12px;">Sin tareas generales</div>';
+    return;
+  }
+  function fmtDurG(iso1,iso2){
+    if(!iso1) return '';
+    const toD=v=>typeof v==='string'?new Date(v):v instanceof Date?v:typeof v.toDate==='function'?v.toDate():new Date(v.seconds*1000);
+    const ms=(iso2?toD(iso2):new Date()).getTime()-toD(iso1).getTime();
+    if(ms<0) return '';
+    const h=Math.floor(ms/3600000),m=Math.floor((ms%3600000)/60000);
+    return h>0?h+'h '+m+'m':m+'m';
+  }
+  const dotColors={'pending':'var(--muted)','In Progress':'var(--busy)','Monitoring':'var(--goh)'};
+  const rows=tasks.map(t=>{
+    const techs=t.techs.length
+      ?t.techs.map(x=>`<span style="font-size:11px;font-family:'Roboto Mono',monospace;color:var(--text);background:var(--s2);border:1px solid var(--border2);padding:1px 6px;border-radius:10px;">${x}</span>`).join(' ')
+      :`<span style="color:var(--dim);font-size:11px;">—</span>`;
+    const ipDur=t.inProgressAt?fmtDurG(t.inProgressAt,t.doneAt||null):'';
+    const dotColor=dotColors[t.status]||'var(--dim)';
+    const src=t.source==='PLANNER'?`<span class="src-planner" style="font-size:9px;padding:0 4px;margin-left:3px;">PPM</span>`:'';
+    return `<tr onclick="isTL()&&openModal('${t.id}')">
+      <td class="col-date">${fmtTaskDate(t.createdAt,'time')}${src}</td>
+      <td class="col-title"><span style="display:inline-flex;align-items:center;gap:5px;">
+        <span class="st-dot" style="background:${dotColor};${t.status==='In Progress'?'box-shadow:0 0 4px '+dotColor+';':''}"></span>
+        <span style="font-weight:500;">${t.title||'Sin descripción'}</span>
+      </span></td>
+      <td class="col-tech">${techs}</td>
+      <td class="col-st">${stTag(t.status)}</td>
+      <td class="col-time" style="color:${ipDur?'var(--busy)':'var(--dim)'};">${ipDur?'⏱'+ipDur:''}</td>
+      <td class="col-del"><span onclick="event.stopPropagation();quickDelete('${t.id}')" style="color:var(--dim);cursor:pointer;font-size:12px;padding:2px 4px;">✕</span></td>
+    </tr>`;
+  }).join('');
+  el.innerHTML=`<div style="overflow-x:auto;"><table class="task-table"><thead><tr>
+    <th class="col-date">Hora</th><th class="col-title">Descripción</th>
+    <th class="col-tech">Técnico</th><th class="col-st">Estado</th>
+    <th class="col-time">⏱</th><th class="col-del"></th>
+  </tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+window.renderGeneralTasks=renderGeneralTasks;
+
+function toggleTodasTareas(header){
+  todasOpen=!todasOpen;
+  const body=document.getElementById('todas-body');
+  const arrow=document.getElementById('todas-arrow');
+  const tf=document.getElementById('todas-filters');
+  if(todasOpen){
+    body.style.display='block';
+    if(tf) tf.style.display='flex';
+    if(arrow) arrow.textContent='▲';
+    renderAllTasks();
+  } else {
+    body.style.display='none';
+    if(tf) tf.style.display='none';
+    if(arrow) arrow.textContent='▼';
+  }
+}
+window.toggleTodasTareas=toggleTodasTareas;
+
 let zoneFilter='all';
 function setZoneFilter(z, el){
   zoneFilter=z;
@@ -2173,7 +2253,8 @@ function renderAreaTasks(areaZone, containerId){
         </span>
       </td>
       <td class="col-tech">${techs}</td>
-      <td class="col-time" style="color:${timeColor};">${timeVal}</td>
+      <td class="col-st">${stTag(t.status)}</td>
+      <td class="col-time" style="color:${ipDur?'var(--busy)':'var(--dim)'};">${ipDur?'⏱'+ipDur:''}</td>
       <td class="col-del"><span onclick="event.stopPropagation();quickDelete('${t.id}')" style="color:var(--dim);cursor:pointer;font-size:12px;padding:2px 4px;">✕</span></td>
     </tr>`;
   }).join('');
@@ -2184,7 +2265,8 @@ function renderAreaTasks(areaZone, containerId){
         <th class="col-date">Hora</th>
         <th class="col-title">Descripción</th>
         <th class="col-tech">Técnico</th>
-        <th class="col-time">Tiempo</th>
+        <th class="col-st">Estado</th>
+        <th class="col-time">⏱</th>
         <th class="col-del"></th>
       </tr></thead>
       <tbody>${rows}</tbody>
@@ -2293,7 +2375,8 @@ function renderTasksView(){
   renderAreaTechs('FP','fp-techs','fp-avail-cnt');
   renderAreaTasks('GOH','goh-tasks');
   renderAreaTasks('FP','fp-tasks');
-  renderAllTasks();
+  renderGeneralTasks();
+  if(todasOpen) renderAllTasks();
 }
 
 // ========== SHIFT START ==========
@@ -3934,6 +4017,7 @@ function applyTechRestrictions(){
     document.querySelectorAll('.task-card,.at-row').forEach(el=>{
       el.style.cursor='default';
       el.style.pointerEvents='none';
+      el.style.userSelect='none';
     });
     // Disable editable cells
     document.querySelectorAll('.editable').forEach(td=>{
