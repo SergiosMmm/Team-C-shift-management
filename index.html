@@ -123,6 +123,20 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
 .st-handover{background:rgba(224,175,104,.12);color:#e0af68;}
 .task-time{font-family:'Roboto Mono',monospace;font-size:10px;color:var(--dim);margin-left:2px;}
 .task-time.ip{color:var(--busy);}
+/* ── Task Table (row view) ── */
+.task-table{width:100%;border-collapse:collapse;font-size:13px;}
+.task-table th{font-size:10px;font-family:'Roboto Mono',monospace;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:5px 8px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap;background:var(--s1);}
+.task-table td{padding:5px 8px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.task-table tr:last-child td{border-bottom:none;}
+.task-table tbody tr{cursor:pointer;transition:background .1s;}
+.task-table tbody tr:hover td{background:var(--s2);}
+.task-table .col-title{white-space:normal;max-width:300px;}
+.task-table .col-woid{font-family:'Roboto Mono',monospace;font-size:10px;color:var(--dim);width:50px;white-space:nowrap;}
+.task-table .col-tech{width:130px;}
+.task-table .col-time{font-family:'Roboto Mono',monospace;font-size:11px;width:60px;white-space:nowrap;}
+.task-table .col-del{width:24px;text-align:center;}
+.task-table .col-st{width:110px;white-space:nowrap;}
+.st-dot{width:7px;height:7px;border-radius:50%;display:inline-block;flex-shrink:0;}
 .st-report{background:var(--osr-bg);color:var(--osr);}
 .st-reminder{background:var(--tl-bg);color:var(--tl);}
 .st-handover{background:var(--sick-bg);color:var(--sick);}
@@ -2041,50 +2055,67 @@ function renderAreaTechs(areaZone, containerId, cntId){
 }
 
 function renderAreaTasks(areaZone, containerId){
-  const tasks = TASKS.filter(t=>
+  const tasks=TASKS.filter(t=>
     (t.zones.includes(areaZone)||t.zones.includes('FLEX'))
-    && (t.status==='pending'||t.status==='In Progress'||t.status==='Monitoring')
+    &&(t.status==='pending'||t.status==='In Progress'||t.status==='Monitoring')
   );
   if(!tasks.length){
     document.getElementById(containerId).innerHTML='<div class="empty-tasks">Sin tareas activas</div>';
     return;
   }
-  document.getElementById(containerId).innerHTML = tasks.map(t=>{
-    const techs = t.techs.length ? t.techs.map(x=>`<span class="tech-chip">${x}</span>`).join('') : '<span style="font-size:10px;color:var(--dim)">Sin asignar</span>';
-    const src = t.source==='PLANNER'?`<span class="src-planner">PLANNER</span>`:'';
-    const note = t.note?`<div class="task-note-i">${t.note}</div>`:'';
-    function fmtDur(iso1, iso2){
-      if(!iso1) return '';
-      const ms=(iso2?new Date(iso2):new Date()).getTime()-new Date(iso1).getTime();
-      if(ms<0) return '';
-      const h=Math.floor(ms/3600000), m=Math.floor((ms%3600000)/60000);
-      return h>0?h+'h '+m+'m':m+'m';
-    }
-    function fmtTime(value){
-      if(!value) return '';
-      const d = typeof value === 'string' ? new Date(value) : (value instanceof Date ? value : (typeof value.toDate === 'function' ? value.toDate() : new Date(value.seconds * 1000 + (value.nanoseconds || 0) / 1e6)));
-      if(isNaN(d.getTime())) return '';
-      return d.toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit'}) + ' ' + d.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
-    }
-    const age=fmtDur(t.createdAt);
-    const createdTime=fmtTime(t.createdAt);
-    const ipDur=t.inProgressAt?fmtDur(t.inProgressAt, t.doneAt||null):'';
-    const requester = t.requestedBy||'';
-    const rowLabel = createdTime || '';
-    const requesterLabel = requester?`<span style="font-size:11px;color:var(--muted);margin-left:8px">${requester}</span>`:'';
 
-    return `<div class="task-card" style="position:relative;" onclick="isTL()&&openModal('${t.id}')">
-      <span onclick="event.stopPropagation();quickDelete('${t.id}')" style="position:absolute;top:6px;right:7px;font-size:11px;color:var(--dim);cursor:pointer;line-height:1;padding:2px 4px;" title="Eliminar">✕</span>
-      <div class="task-woid">${rowLabel} ${src}${age?`<span class="task-time">${age}</span>`:''}${requesterLabel}</div>
-      <div class="task-title">${t.title||'<em style="color:var(--muted)">Sin descripción</em>'}</div>
-      <div class="task-foot">
-        ${techs}
-        ${stTag(t.status)}
-        ${ipDur?`<span class="task-time ip">⏱${ipDur}</span>`:''}
-      </div>
-      ${note}
-    </div>`;
+  function fmtDur(iso1,iso2){
+    if(!iso1) return '';
+    let d1,d2;
+    const toDate=v=>v?( typeof v==='string'?new Date(v): v instanceof Date?v: typeof v.toDate==='function'?v.toDate():new Date(v.seconds*1000) ):null;
+    d1=toDate(iso1); d2=iso2?toDate(iso2):new Date();
+    const ms=d2.getTime()-d1.getTime();
+    if(ms<0) return '';
+    const h=Math.floor(ms/3600000),m=Math.floor((ms%3600000)/60000);
+    return h>0?h+'h '+m+'m':m+'m';
+  }
+
+  const dotColors={'pending':'var(--muted)','In Progress':'var(--busy)','Monitoring':'var(--goh)'};
+
+  const rows=tasks.map(t=>{
+    const techs=t.techs.length
+      ?t.techs.map(x=>`<span style="font-size:11px;font-family:'Roboto Mono',monospace;color:var(--text);background:var(--s2);border:1px solid var(--border2);padding:1px 6px;border-radius:10px;white-space:nowrap;">${x}</span>`).join(' ')
+      :`<span style="color:var(--dim);font-size:11px;">—</span>`;
+    const ipDur=t.inProgressAt?fmtDur(t.inProgressAt,t.doneAt||null):'';
+    const age=fmtDur(t.createdAt);
+    const dotColor=dotColors[t.status]||'var(--dim)';
+    const src=t.source==='PLANNER'?`<span class="src-planner" style="font-size:9px;padding:0 4px;margin-left:3px;">P</span>`:'';
+    const timeVal=ipDur||age;
+    const timeColor=ipDur?'var(--busy)':'var(--dim)';
+
+    return `<tr onclick="isTL()&&openModal('${t.id}')">
+      <td class="col-woid">#${t.woid}${src}</td>
+      <td class="col-title">
+        <span style="display:inline-flex;align-items:center;gap:5px;">
+          <span class="st-dot" style="background:${dotColor};${t.status==='In Progress'?'box-shadow:0 0 4px '+dotColor+';':''}"></span>
+          <span style="font-weight:500;font-size:13px;">${t.title||'<em style="color:var(--muted);font-weight:400;">Sin descripción</em>'}</span>
+          ${t.note?`<span style="color:var(--dim);font-size:11px;font-style:italic;">· ${t.note.substring(0,25)}${t.note.length>25?'…':''}</span>`:''}
+        </span>
+      </td>
+      <td class="col-tech">${techs}</td>
+      <td class="col-st">${stTag(t.status)}</td>
+      <td class="col-time" style="color:${timeColor};">${timeVal}</td>
+      <td class="col-del"><span onclick="event.stopPropagation();quickDelete('${t.id}')" style="color:var(--dim);cursor:pointer;font-size:12px;padding:2px 4px;">✕</span></td>
+    </tr>`;
   }).join('');
+
+  document.getElementById(containerId).innerHTML=`
+    <table class="task-table">
+      <thead><tr>
+        <th class="col-woid">WO</th>
+        <th class="col-title">Descripción</th>
+        <th class="col-tech">Técnico</th>
+        <th class="col-st">Estado</th>
+        <th class="col-time">Tiempo</th>
+        <th class="col-del"></th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
 }
 
 function renderAllTasks(){
