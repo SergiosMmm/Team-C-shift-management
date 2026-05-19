@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
+<!-- saved from url=(0031)https://teamc-lelystad.web.app/ -->
+<html lang="es"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Team C · Mantenimiento Lelystad</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="./index_files/css2" rel="stylesheet">
 <style>
 :root{
   --bg:#0d1117;
@@ -118,6 +118,11 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
 .st-pend{background:var(--s2);color:var(--muted);}
 .st-done{background:rgba(86,211,100,.12);color:var(--avail);}
 .st-mon{background:rgba(121,192,255,.12);color:var(--goh);}
+.st-report{background:rgba(255,158,100,.12);color:#ff9e64;}
+.st-reminder{background:rgba(187,154,247,.12);color:#bb9af7;}
+.st-handover{background:rgba(224,175,104,.12);color:#e0af68;}
+.task-time{font-family:'Roboto Mono',monospace;font-size:10px;color:var(--dim);margin-left:2px;}
+.task-time.ip{color:var(--busy);}
 .st-report{background:var(--osr-bg);color:var(--osr);}
 .st-reminder{background:var(--tl-bg);color:var(--tl);}
 .st-handover{background:var(--sick-bg);color:var(--sick);}
@@ -140,20 +145,20 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
 .at-row{display:flex;align-items:center;gap:10px;padding:7px 8px;border-radius:var(--r-sm);cursor:pointer;transition:background .1s;border-bottom:1px solid var(--border);}
 .at-row:last-child{border-bottom:none;}
 .at-row:hover{background:var(--s2);}
-.at-woid{font-family:'Roboto Mono',monospace;font-size:11px;color:var(--muted);min-width:80px;}
-.at-title{font-size:14px;flex:1;}
-.at-techs{display:flex;gap:3px;flex-wrap:wrap;}
+.at-woid{font-family:'Roboto Mono',monospace;font-size:11px;color:var(--muted);min-width:120px;flex:0 0 120px;}
+.at-title{font-size:14px;flex:1;min-width:0;}
+.at-techs{display:flex;flex-direction:column;gap:3px;align-items:flex-start;min-width:100px;}
 .at-status{min-width:90px;text-align:right;}
 
 /* ===================== SHIFT START ===================== */
 .ss-layout{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px;}
 .ss-col{display:flex;flex-direction:column;gap:10px;}
 .ss-zone{background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:12px;}
-.ss-zone-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;}
-.ss-zone-label{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-family:'Roboto Mono',monospace;}
+.ss-zone-head{display:flex;flex-direction:column;align-items:center;gap:4px;padding-bottom:9px;margin-bottom:9px;border-bottom:1px solid var(--border);}
+.ss-zone-label{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-family:'Roboto Mono',monospace;text-align:center;}
 .ss-zone-count{font-family:'Roboto Mono',monospace;font-size:11px;padding:1px 7px;border-radius:20px;background:var(--s2);color:var(--muted);}
 .ss-tech-list{display:flex;flex-direction:column;gap:4px;}
-.ss-tech{font-size:13px;display:flex;align-items:center;gap:6px;}
+.ss-tech{font-size:13px;display:flex;align-items:center;gap:8px;justify-content:space-between;padding:2px 0;}
 .ss-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
 
 .ss-totals{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
@@ -194,6 +199,8 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
 .hoy-pill{font-size:11px;padding:2px 8px;border-radius:4px;font-family:'Roboto Mono',monospace;}
 .hoy-present{background:var(--flex-bg);color:var(--flex);}
 .hoy-absent{background:var(--sick-bg);color:var(--sick);}
+.hoy-zone-wrap{display:inline-flex;align-items:center;gap:5px;cursor:pointer;padding:2px 6px;border-radius:4px;position:relative;}
+.hoy-zone-wrap:hover{background:var(--s2);}
 .hoy-hol{background:var(--s2);color:var(--muted);}
 .active-col{background:rgba(86,211,100,.06)!important;border-left:2px solid rgba(86,211,100,.3);border-right:2px solid rgba(86,211,100,.3);}
 .alert-box{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:var(--r-sm);padding:10px 14px;margin-bottom:8px;font-size:12px;display:flex;align-items:flex-start;gap:8px;color:var(--osr);}
@@ -321,13 +328,26 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
 .pc-dot{width:6px;height:6px;border-radius:50%;background:currentColor;border-radius:50%;}
 .parse-apply-btn{margin-top:10px;padding:8px 20px;border-radius:var(--r-sm);border:none;background:var(--flex);color:#0d1117;font-size:13px;font-weight:600;cursor:pointer;font-family:'Source Sans 3',sans-serif;}
 /* SS TABLE */
+.ss-table-wrap{overflow-x:auto;}
 .ss-table{width:100%;border-collapse:collapse;font-size:13px;background:var(--s1);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;}
-.ss-table th{padding:8px 14px;text-align:left;font-family:'Roboto Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.07em;color:var(--muted);background:var(--s2);border-bottom:1px solid var(--border);text-transform:uppercase;}
+.ss-table th{padding:8px 16px;text-align:left;font-family:'Roboto Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.07em;color:var(--muted);background:var(--s2);border-bottom:1px solid var(--border);text-transform:uppercase;white-space:nowrap;min-width:140px;}
 .ss-tr td{border-bottom:1px solid var(--border);}
 .ss-tr:last-child td{border-bottom:none;}
 .ss-tr:hover td{background:var(--s2);}
 .ss-zone-cell{padding:8px 14px;font-family:'Roboto Mono',monospace;font-size:11px;font-weight:600;white-space:nowrap;vertical-align:top;padding-top:10px;background:var(--s1);}
-.ss-name-cell{padding:8px 14px;font-size:13px;color:var(--text);}
+.ss-name-cell{padding:9px 16px;font-size:13px;color:var(--text);white-space:nowrap;}
+.ss-tech-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:nowrap;}
+.ss-tech-row span{white-space:nowrap;}
+.ss-ppm-label{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--muted);}
+.ss-ppm-checkbox{width:14px;height:14px;accent-color:var(--flex);}
+@media(max-width:900px){
+  .ss-table th, .ss-table td{padding:7px 10px;font-size:12px;}
+  .ss-table{font-size:12px;}
+  .ss-zone-cell{padding:10px 10px 10px 14px;}
+  .ss-name-cell{padding:10px 10px;}
+  .ss-tech-row{gap:6px;}
+  .ss-ppm-label{font-size:10px;}
+}
 .mp-table td.editable{cursor:pointer;position:relative;}
 .mp-table td.editable:hover .pill{outline:1px solid var(--border2);}
 .cell-edit{position:absolute;top:100%;left:0;z-index:40;background:var(--s1);border:1px solid var(--flex);border-radius:var(--r-sm);padding:4px;display:flex;flex-direction:column;gap:2px;min-width:110px;box-shadow:0 4px 20px rgba(0,0,0,.5);}
@@ -359,8 +379,7 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
     </div>
     <div class="login-field">
       <div class="login-label">PIN</div>
-      <input class="login-input" id="login-pin" type="password" placeholder="••••" maxlength="6"
-        onkeydown="if(event.key==='Enter')doLogin()">
+      <input class="login-input" id="login-pin" type="password" placeholder="••••" maxlength="6" onkeydown="if(event.key===&#39;Enter&#39;)doLogin()">
     </div>
     <div class="login-err" id="login-err"></div>
     <button class="login-btn" onclick="doLogin()">Entrar</button>
@@ -373,26 +392,23 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
     <div class="brand-name">TEAM C <span>· Lelystad</span></div>
   </div>
   <div class="topbar-right" id="topbar-right">
-    <div class="user-badge" id="user-badge" onclick="doLogout()" style="display:none;" title="Cerrar sesión">👤 <span id="user-badge-name"></span> <span style="color:var(--dim);">✕</span></div>
+    <div class="user-badge" id="user-badge" onclick="doLogout()" style="display: flex;" title="Cerrar sesión">👤 <span id="user-badge-name">1 (TL)</span> <span style="color:var(--dim);">✕</span></div>
     <select class="shift-sel">
       <option>Shift 1 · Morning 06–14</option>
       <option>Shift 2 · Afternoon 14–22</option>
       <option>Shift 3 · Night 22–06</option>
     </select>
-    <div class="clock" id="clock"></div>
+    <div class="clock" id="clock">mar 19 may · 04:01:39</div>
   </div>
 </div>
-<div id="loading-bar" style="display:none;background:#1c6b35;color:#d5f0da;font-family:'Roboto Mono',monospace;font-size:11px;padding:5px 16px;align-items:center;gap:8px;">
-  <div style="width:8px;height:8px;border-radius:50%;background:#56d364;animation:pulse 1s infinite;flex-shrink:0;"></div>
-  <span id="loading-msg">Cargando...</span>
-</div>
+<div id="loading-bar" style="display: none; background: rgb(28, 107, 53); color: rgb(213, 240, 218); font-family: &quot;Roboto Mono&quot;, monospace; font-size: 11px; padding: 5px 16px; align-items: center; gap: 8px;"></div>
 
 <div class="nav">
-  <button class="nav-tab active" onclick="goTab('tasks',this)">Tareas</button>
-  <button class="nav-tab" onclick="goTab('ss',this)">Shift Start</button>
-  <button class="nav-tab" onclick="goTab('mp',this)">Planning</button>
-  <button class="nav-tab" onclick="goTab('workers',this)">Equipo</button>
-  <button class="nav-tab" id="tab-qr" onclick="goTab('qr',this)">QR</button>
+  <button class="nav-tab active" onclick="goTab(&#39;tasks&#39;,this)">Tareas</button>
+  <button class="nav-tab" onclick="goTab(&#39;ss&#39;,this)">Shift Start</button>
+  <button class="nav-tab" onclick="goTab(&#39;mp&#39;,this)">Planning</button>
+  <button class="nav-tab" onclick="goTab(&#39;workers&#39;,this)">Equipo</button>
+  <button class="nav-tab" id="tab-qr" onclick="goTab(&#39;qr&#39;,this)">QR</button>
 </div>
 
 <div class="main">
@@ -407,16 +423,69 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
       <div class="area-col-head">
         <span class="area-col-title goh">GOH — Hanging Garments</span>
         <div style="display:flex;align-items:center;gap:8px;">
-          <span class="avail-count" id="goh-avail-cnt"></span>
-          <button class="new-task-btn" onclick="openNewTask('GOH')">+ Tarea</button>
+          <span class="avail-count" id="goh-avail-cnt"><span class="avail-count ac-avail">5 libres</span></span>
+          <button class="new-task-btn" onclick="openNewTask(&#39;GOH&#39;)">+ Tarea</button>
         </div>
       </div>
       <div class="area-col-body">
         <div class="techs-panel">
           <div class="panel-label">Técnicos</div>
-          <div id="goh-techs"></div>
+          <div id="goh-techs"><div class="techs-chips"><span class="tech-chip-inline zone-goh busy">
+      <span class="tc-dot" style="background:#1e5c2e;"></span>
+      Eduardo Sienes<span style="font-size:9px;background:rgba(227,179,65,.2);color:var(--busy);padding:0 4px;border-radius:8px;">1</span>
+    </span><span class="tech-chip-inline zone-goh">
+      <span class="tc-dot" style="background:#56d364;box-shadow:0 0 4px rgba(86,211,100,.5);"></span>
+      Juan Suárez
+    </span><span class="tech-chip-inline zone-goh">
+      <span class="tc-dot" style="background:#56d364;box-shadow:0 0 4px rgba(86,211,100,.5);"></span>
+      Alejandro G.
+    </span><span class="tech-chip-inline zone-flex busy">
+      <span class="tc-dot" style="background:#e3b341;"></span>
+      Raul R.<span style="font-size:9px;background:rgba(227,179,65,.2);color:var(--busy);padding:0 4px;border-radius:8px;">1</span>
+    </span><span class="tech-chip-inline zone-flex">
+      <span class="tc-dot" style="background:#56d364;box-shadow:0 0 4px rgba(86,211,100,.5);"></span>
+      Jorge A.
+    </span><span class="tech-chip-inline zone-flex busy">
+      <span class="tc-dot" style="background:#1e5c2e;"></span>
+      Iago C.<span style="font-size:9px;background:rgba(227,179,65,.2);color:var(--busy);padding:0 4px;border-radius:8px;">1</span>
+    </span><span class="tech-chip-inline zone-flex busy">
+      <span class="tc-dot" style="background:#1e5c2e;"></span>
+      Adrian B.<span style="font-size:9px;background:rgba(227,179,65,.2);color:var(--busy);padding:0 4px;border-radius:8px;">1</span>
+    </span><span class="tech-chip-inline zone-flex busy">
+      <span class="tc-dot" style="background:#1e5c2e;"></span>
+      Marcos T.<span style="font-size:9px;background:rgba(227,179,65,.2);color:var(--busy);padding:0 4px;border-radius:8px;">1</span>
+    </span><span class="tech-chip-inline zone-flex">
+      <span class="tc-dot" style="background:#56d364;box-shadow:0 0 4px rgba(86,211,100,.5);"></span>
+      Sergio Benavides
+    </span><span class="tech-chip-inline zone-flex">
+      <span class="tc-dot" style="background:#56d364;box-shadow:0 0 4px rgba(86,211,100,.5);"></span>
+      Guillermo Garcia
+    </span><span style="font-size:10px;color:var(--dim);margin:0 2px;">·</span><span class="tech-chip-inline zone-pa">
+      <span class="tc-dot" style="background:#56d364;box-shadow:0 0 4px rgba(86,211,100,.5);"></span>
+      Borisz M.
+    </span></div></div>
         </div>
-        <div class="tasks-panel" id="goh-tasks"></div>
+        <div class="tasks-panel" id="goh-tasks"><div class="task-card" style="position:relative;" onclick="isTL()&amp;&amp;openModal(&#39;LJR9FF90NRW04uApQbaY&#39;)">
+      <span onclick="event.stopPropagation();quickDelete(&#39;LJR9FF90NRW04uApQbaY&#39;)" style="position:absolute;top:6px;right:7px;font-size:11px;color:var(--dim);cursor:pointer;line-height:1;padding:2px 4px;" title="Eliminar">✕</span>
+      <div class="task-woid">14/5 14:41 <span class="task-time">109h 19m</span><span style="font-size:11px;color:var(--muted);margin-left:8px">GoH Sortation</span></div>
+      <div class="task-title">dock 137 - linea automica</div>
+      <div class="task-foot">
+        <span class="tech-chip">Eduardo Sienes</span>
+        <span class="status-tag st-prog">In Progress</span>
+        <span class="task-time ip">⏱108h 37m</span>
+      </div>
+      
+    </div><div class="task-card" style="position:relative;" onclick="isTL()&amp;&amp;openModal(&#39;QrcgXlQvDtrVeI11ncdH&#39;)">
+      <span onclick="event.stopPropagation();quickDelete(&#39;QrcgXlQvDtrVeI11ncdH&#39;)" style="position:absolute;top:6px;right:7px;font-size:11px;color:var(--dim);cursor:pointer;line-height:1;padding:2px 4px;" title="Eliminar">✕</span>
+      <div class="task-woid">14/5 15:33 <span class="task-time">108h 27m</span><span style="font-size:11px;color:var(--muted);margin-left:8px">GoH Sortation</span></div>
+      <div class="task-title">Lk 7 y 8</div>
+      <div class="task-foot">
+        <span class="tech-chip">Adrian B.</span>
+        <span class="status-tag st-prog">In Progress</span>
+        <span class="task-time ip">⏱108h 27m</span>
+      </div>
+      
+    </div></div>
       </div>
     </div>
 
@@ -425,16 +494,89 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
       <div class="area-col-head">
         <span class="area-col-title fp">FP — FlatPack</span>
         <div style="display:flex;align-items:center;gap:8px;">
-          <span class="avail-count" id="fp-avail-cnt"></span>
-          <button class="new-task-btn" onclick="openNewTask('FP')">+ Tarea</button>
+          <span class="avail-count" id="fp-avail-cnt"><span class="avail-count ac-avail">3 libres</span></span>
+          <button class="new-task-btn" onclick="openNewTask(&#39;FP&#39;)">+ Tarea</button>
         </div>
       </div>
       <div class="area-col-body">
         <div class="techs-panel">
           <div class="panel-label">Técnicos</div>
-          <div id="fp-techs"></div>
+          <div id="fp-techs"><div class="techs-chips"><span class="tech-chip-inline zone-fp busy">
+      <span class="tc-dot" style="background:#1e5c2e;"></span>
+      Borja S.<span style="font-size:9px;background:rgba(227,179,65,.2);color:var(--busy);padding:0 4px;border-radius:8px;">1</span>
+    </span><span class="tech-chip-inline zone-fp busy">
+      <span class="tc-dot" style="background:#1e5c2e;"></span>
+      Paula S.<span style="font-size:9px;background:rgba(227,179,65,.2);color:var(--busy);padding:0 4px;border-radius:8px;">1</span>
+    </span><span class="tech-chip-inline zone-fp busy">
+      <span class="tc-dot" style="background:#1e5c2e;"></span>
+      Sergio Cuco<span style="font-size:9px;background:rgba(227,179,65,.2);color:var(--busy);padding:0 4px;border-radius:8px;">1</span>
+    </span><span class="tech-chip-inline zone-flex busy">
+      <span class="tc-dot" style="background:#e3b341;"></span>
+      Raul R.<span style="font-size:9px;background:rgba(227,179,65,.2);color:var(--busy);padding:0 4px;border-radius:8px;">1</span>
+    </span><span class="tech-chip-inline zone-flex">
+      <span class="tc-dot" style="background:#56d364;box-shadow:0 0 4px rgba(86,211,100,.5);"></span>
+      Jorge A.
+    </span><span class="tech-chip-inline zone-flex busy">
+      <span class="tc-dot" style="background:#1e5c2e;"></span>
+      Iago C.<span style="font-size:9px;background:rgba(227,179,65,.2);color:var(--busy);padding:0 4px;border-radius:8px;">1</span>
+    </span><span class="tech-chip-inline zone-flex busy">
+      <span class="tc-dot" style="background:#1e5c2e;"></span>
+      Adrian B.<span style="font-size:9px;background:rgba(227,179,65,.2);color:var(--busy);padding:0 4px;border-radius:8px;">1</span>
+    </span><span class="tech-chip-inline zone-flex busy">
+      <span class="tc-dot" style="background:#1e5c2e;"></span>
+      Marcos T.<span style="font-size:9px;background:rgba(227,179,65,.2);color:var(--busy);padding:0 4px;border-radius:8px;">1</span>
+    </span><span class="tech-chip-inline zone-flex">
+      <span class="tc-dot" style="background:#56d364;box-shadow:0 0 4px rgba(86,211,100,.5);"></span>
+      Sergio Benavides
+    </span><span class="tech-chip-inline zone-flex">
+      <span class="tc-dot" style="background:#56d364;box-shadow:0 0 4px rgba(86,211,100,.5);"></span>
+      Guillermo Garcia
+    </span><span style="font-size:10px;color:var(--dim);margin:0 2px;">·</span><span class="tech-chip-inline zone-pa busy">
+      <span class="tc-dot" style="background:#e3b341;"></span>
+      Leonardo<span style="font-size:9px;background:rgba(227,179,65,.2);color:var(--busy);padding:0 4px;border-radius:8px;">1</span>
+    </span></div></div>
         </div>
-        <div class="tasks-panel" id="fp-tasks"></div>
+        <div class="tasks-panel" id="fp-tasks"><div class="task-card" style="position:relative;" onclick="isTL()&amp;&amp;openModal(&#39;NokxhIsk9T9MUeDaxdxN&#39;)">
+      <span onclick="event.stopPropagation();quickDelete(&#39;NokxhIsk9T9MUeDaxdxN&#39;)" style="position:absolute;top:6px;right:7px;font-size:11px;color:var(--dim);cursor:pointer;line-height:1;padding:2px 4px;" title="Eliminar">✕</span>
+      <div class="task-woid">14/5 14:28 <span class="task-time">109h 32m</span><span style="font-size:11px;color:var(--muted);margin-left:8px">FP Sortation</span></div>
+      <div class="task-title">OSR</div>
+      <div class="task-foot">
+        <span class="tech-chip">Paula S.</span><span class="tech-chip">Marcos T.</span>
+        <span class="status-tag st-prog">In Progress</span>
+        
+      </div>
+      
+    </div><div class="task-card" style="position:relative;" onclick="isTL()&amp;&amp;openModal(&#39;sbTnwGldanmqfM5v1gPq&#39;)">
+      <span onclick="event.stopPropagation();quickDelete(&#39;sbTnwGldanmqfM5v1gPq&#39;)" style="position:absolute;top:6px;right:7px;font-size:11px;color:var(--dim);cursor:pointer;line-height:1;padding:2px 4px;" title="Eliminar">✕</span>
+      <div class="task-woid">14/5 14:27 <span class="task-time">109h 33m</span><span style="font-size:11px;color:var(--muted);margin-left:8px">FP Sortation</span></div>
+      <div class="task-title">PDSS Crane 8</div>
+      <div class="task-foot">
+        <span class="tech-chip">Leonardo</span>
+        <span class="status-tag st-pend">Pending</span>
+        
+      </div>
+      
+    </div><div class="task-card" style="position:relative;" onclick="isTL()&amp;&amp;openModal(&#39;veXq8UWt9TyWoqNcqEbZ&#39;)">
+      <span onclick="event.stopPropagation();quickDelete(&#39;veXq8UWt9TyWoqNcqEbZ&#39;)" style="position:absolute;top:6px;right:7px;font-size:11px;color:var(--dim);cursor:pointer;line-height:1;padding:2px 4px;" title="Eliminar">✕</span>
+      <div class="task-woid">14/5 13:33 <span class="task-time">110h 27m</span><span style="font-size:11px;color:var(--muted);margin-left:8px">FP Sortation</span></div>
+      <div class="task-title">Crane 27 - green belt</div>
+      <div class="task-foot">
+        <span class="tech-chip">Borja S.</span><span class="tech-chip">Sergio Cuco</span>
+        <span class="status-tag st-prog">In Progress</span>
+        <span class="task-time ip">⏱109h 31m</span>
+      </div>
+      
+    </div><div class="task-card" style="position:relative;" onclick="isTL()&amp;&amp;openModal(&#39;yuUsyAO6JOWbxitgQwKq&#39;)">
+      <span onclick="event.stopPropagation();quickDelete(&#39;yuUsyAO6JOWbxitgQwKq&#39;)" style="position:absolute;top:6px;right:7px;font-size:11px;color:var(--dim);cursor:pointer;line-height:1;padding:2px 4px;" title="Eliminar">✕</span>
+      <div class="task-woid">14/5 13:34 <span class="task-time">110h 27m</span><span style="font-size:11px;color:var(--muted);margin-left:8px">FP Sortation</span></div>
+      <div class="task-title">Modulo ASI - OSR</div>
+      <div class="task-foot">
+        <span class="tech-chip">Iago C.</span>
+        <span class="status-tag st-prog">In Progress</span>
+        <span class="task-time ip">⏱109h 34m</span>
+      </div>
+      
+    </div></div>
       </div>
     </div>
 
@@ -444,35 +586,132 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
   <div class="all-tasks-wrap">
     <div class="all-tasks-head">
       <span class="all-tasks-title">Todas las tareas del turno</span>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <label style="font-size:11px;color:var(--muted);font-family:&#39;Roboto Mono&#39;,monospace;display:flex;align-items:center;gap:6px;">
+          Día
+          <input id="at-date" type="date" style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-size:12px;color:var(--text);outline:none;" onchange="setATDate(this.value)">
+        </label>
+        <button class="at-btn" onclick="setATDate(getCurrentShiftDayKey())" style="padding:4px 10px;">Hoy</button>
+      </div>
       <div class="at-filters">
-        <button class="at-btn on" onclick="setAF('all',this)">Todas</button>
-        <button class="at-btn" onclick="setAF('Done',this)">Done</button>
-        <button class="at-btn" onclick="setAF('In Progress',this)">In Progress</button>
-        <button class="at-btn" onclick="setAF('Monitoring',this)">Monitoring</button>
-        <button class="at-btn" onclick="setAF('pending',this)">Pending</button>
-        <button class="at-btn" onclick="setAF('Report Next Shift',this)">Report Next Shift</button>
-        <button class="at-btn" onclick="setAF('Reminder',this)">Reminder</button>
-        <button class="at-btn" onclick="setAF('Shift Handover',this)">Shift Handover</button>
-        <button class="at-btn" onclick="setAF('PLANNER',this)">PLANNER</button>
+        <button class="at-btn on" onclick="setAF(&#39;all&#39;,this)">Todas</button>
+        <button class="at-btn" onclick="setAF(&#39;Done&#39;,this)">Done</button>
+        <button class="at-btn" onclick="setAF(&#39;In Progress&#39;,this)">In Progress</button>
+        <button class="at-btn" onclick="setAF(&#39;Monitoring&#39;,this)">Monitoring</button>
+        <button class="at-btn" onclick="setAF(&#39;pending&#39;,this)">Pending</button>
+        <button class="at-btn" onclick="setAF(&#39;Report Next Shift&#39;,this)">Report Next Shift</button>
+        <button class="at-btn" onclick="setAF(&#39;Reminder&#39;,this)">Reminder</button>
+        <button class="at-btn" onclick="setAF(&#39;Shift Handover&#39;,this)">Shift Handover</button>
+        <button class="at-btn" onclick="setAF(&#39;PLANNER&#39;,this)">PLANNER</button>
       </div>
     </div>
     <div class="at-search"><input type="text" id="at-search" placeholder="Buscar WO, tarea o técnico..." oninput="renderAllTasks()"></div>
-    <div class="at-list" id="at-list"></div>
+    <div class="at-list" id="at-list"><div style="padding:20px;text-align:center;color:var(--dim);font-size:12px;">Sin resultados</div></div>
   </div>
 
 </div>
 
 <!-- ======== SHIFT START ======== -->
 <div class="view" id="view-ss">
-  <div class="ss-totals" id="ss-totals"></div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:14px;">
-    <div>
-      <div id="ss-table-wrap"></div>
+  <div class="ss-totals" id="ss-totals">
+    <div class="ss-chip"><span class="ss-chip-num">21</span> en turno
+      <span style="font-size:11px;color:var(--sick);margin-left:4px;">(+1 sick)</span>
     </div>
-    <div class="checklist-card">
-      <div class="checklist-label">Starting shift checklist</div>
-      <div id="checklist"></div>
+    <div class="ss-chip" style="border-color:var(--tl)"><span class="ss-chip-num" style="color:var(--tl)">2</span> TL</div>
+    <div class="ss-chip" style="border-color:var(--goh)"><span class="ss-chip-num" style="color:var(--goh)">12</span> MT
+      <span style="font-size:11px;color:var(--dim);">(GOH 3 · FP 3 · FLEX 6)</span>
     </div>
+    <div class="ss-chip" style="border-color:var(--osr)"><span class="ss-chip-num" style="color:var(--osr)">7</span> PA
+      <span style="font-size:11px;color:var(--dim);">(FP 2 · GOH 2 · OSR 0 · SP 3)</span>
+    </div>
+    
+    
+  </div>
+  <div id="ss-table-wrap" style="margin-bottom:14px;">
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;">
+      <div class="ss-zone">
+      <div class="ss-zone-head">
+        <span class="ss-zone-label" style="color:var(--goh)">GOH Area</span>
+        <span class="ss-zone-count">3</span>
+      </div>
+      <div class="ss-tech-list"><div class="ss-tech"><span style="display:flex;align-items:center;gap:6px;min-width:0;"><span class="ss-dot" style="background:var(--goh);flex-shrink:0;"></span>Alejandro G.</span><label class="ss-ppm-label"><input type="checkbox" class="ss-ppm-checkbox" onclick="event.stopPropagation();togglePPMAssigned(" alejandro="" g.")"="">PPM</label></div><div class="ss-tech"><span style="display:flex;align-items:center;gap:6px;min-width:0;"><span class="ss-dot" style="background:var(--goh);flex-shrink:0;"></span>Eduardo Sienes</span><label class="ss-ppm-label"><input type="checkbox" class="ss-ppm-checkbox" onclick="event.stopPropagation();togglePPMAssigned(" eduardo="" sienes")"="">PPM</label></div><div class="ss-tech"><span style="display:flex;align-items:center;gap:6px;min-width:0;"><span class="ss-dot" style="background:var(--goh);flex-shrink:0;"></span>Juan Suárez</span><label class="ss-ppm-label"><input type="checkbox" class="ss-ppm-checkbox" onclick="event.stopPropagation();togglePPMAssigned(" juan="" suárez")"="">PPM</label></div></div>
+    </div><div class="ss-zone">
+      <div class="ss-zone-head">
+        <span class="ss-zone-label" style="color:var(--fp)">FP Area</span>
+        <span class="ss-zone-count">3</span>
+      </div>
+      <div class="ss-tech-list"><div class="ss-tech"><span style="display:flex;align-items:center;gap:6px;min-width:0;"><span class="ss-dot" style="background:var(--fp);flex-shrink:0;"></span>Paula S.</span><label class="ss-ppm-label"><input type="checkbox" class="ss-ppm-checkbox" onclick="event.stopPropagation();togglePPMAssigned(" paula="" s.")"="">PPM</label></div><div class="ss-tech"><span style="display:flex;align-items:center;gap:6px;min-width:0;"><span class="ss-dot" style="background:var(--fp);flex-shrink:0;"></span>Borja S.</span><label class="ss-ppm-label"><input type="checkbox" class="ss-ppm-checkbox" onclick="event.stopPropagation();togglePPMAssigned(" borja="" s.")"="">PPM</label></div><div class="ss-tech"><span style="display:flex;align-items:center;gap:6px;min-width:0;"><span class="ss-dot" style="background:var(--fp);flex-shrink:0;"></span>Sergio Cuco</span><label class="ss-ppm-label"><input type="checkbox" class="ss-ppm-checkbox" onclick="event.stopPropagation();togglePPMAssigned(" sergio="" cuco")"="">PPM</label></div></div>
+    </div><div class="ss-zone">
+      <div class="ss-zone-head">
+        <span class="ss-zone-label" style="color:var(--flex)">FLEX</span>
+        <span class="ss-zone-count">6</span>
+      </div>
+      <div class="ss-tech-list"><div class="ss-tech"><span style="display:flex;align-items:center;gap:6px;min-width:0;"><span class="ss-dot" style="background:var(--flex);flex-shrink:0;"></span>Guillermo Garcia</span><label class="ss-ppm-label"><input type="checkbox" class="ss-ppm-checkbox" onclick="event.stopPropagation();togglePPMAssigned(" guillermo="" garcia")"="">PPM</label></div><div class="ss-tech"><span style="display:flex;align-items:center;gap:6px;min-width:0;"><span class="ss-dot" style="background:var(--flex);flex-shrink:0;"></span>Iago C.</span><label class="ss-ppm-label"><input type="checkbox" class="ss-ppm-checkbox" onclick="event.stopPropagation();togglePPMAssigned(" iago="" c.")"="">PPM</label></div><div class="ss-tech"><span style="display:flex;align-items:center;gap:6px;min-width:0;"><span class="ss-dot" style="background:var(--flex);flex-shrink:0;"></span>Jorge A.</span><label class="ss-ppm-label"><input type="checkbox" class="ss-ppm-checkbox" onclick="event.stopPropagation();togglePPMAssigned(" jorge="" a.")"="">PPM</label></div><div class="ss-tech"><span style="display:flex;align-items:center;gap:6px;min-width:0;"><span class="ss-dot" style="background:var(--flex);flex-shrink:0;"></span>Adrian B.</span><label class="ss-ppm-label"><input type="checkbox" class="ss-ppm-checkbox" onclick="event.stopPropagation();togglePPMAssigned(" adrian="" b.")"="">PPM</label></div><div class="ss-tech"><span style="display:flex;align-items:center;gap:6px;min-width:0;"><span class="ss-dot" style="background:var(--flex);flex-shrink:0;"></span>Raul R.</span><label class="ss-ppm-label"><input type="checkbox" class="ss-ppm-checkbox" onclick="event.stopPropagation();togglePPMAssigned(" raul="" r.")"="">PPM</label></div><div class="ss-tech"><span style="display:flex;align-items:center;gap:6px;min-width:0;"><span class="ss-dot" style="background:var(--flex);flex-shrink:0;"></span>Sergio Benavides</span><label class="ss-ppm-label"><input type="checkbox" class="ss-ppm-checkbox" onclick="event.stopPropagation();togglePPMAssigned(" sergio="" benavides")"="">PPM</label></div></div>
+    </div><div class="ss-zone">
+      <div class="ss-zone-head">
+        <span class="ss-zone-label" style="color:var(--goh)">GOH Silo</span>
+        <span class="ss-zone-count">2</span>
+      </div>
+      <div class="ss-tech-list"><div class="ss-tech"><span style="display:flex;align-items:center;gap:6px;min-width:0;"><span class="ss-dot" style="background:var(--goh);flex-shrink:0;"></span>Carlos Pérez Castro</span></div><div class="ss-tech"><span style="display:flex;align-items:center;gap:6px;min-width:0;"><span class="ss-dot" style="background:var(--goh);flex-shrink:0;"></span>Borisz M.</span></div></div>
+    </div><div class="ss-zone">
+      <div class="ss-zone-head">
+        <span class="ss-zone-label" style="color:var(--fp)">FP Silo</span>
+        <span class="ss-zone-count">2</span>
+      </div>
+      <div class="ss-tech-list"><div class="ss-tech"><span style="display:flex;align-items:center;gap:6px;min-width:0;"><span class="ss-dot" style="background:var(--fp);flex-shrink:0;"></span>Carlos R C</span></div><div class="ss-tech"><span style="display:flex;align-items:center;gap:6px;min-width:0;"><span class="ss-dot" style="background:var(--fp);flex-shrink:0;"></span>Leonardo</span></div></div>
+    </div><div class="ss-zone">
+      <div class="ss-zone-head">
+        <span class="ss-zone-label" style="color:var(--tl)">TL</span>
+        <span class="ss-zone-count">2</span>
+      </div>
+      <div class="ss-tech-list"><div class="ss-tech"><span style="display:flex;align-items:center;gap:6px;min-width:0;"><span class="ss-dot" style="background:var(--tl);flex-shrink:0;"></span>Sergio</span></div><div class="ss-tech"><span style="display:flex;align-items:center;gap:6px;min-width:0;"><span class="ss-dot" style="background:var(--tl);flex-shrink:0;"></span>Julio</span></div></div>
+    </div><div class="ss-zone">
+      <div class="ss-zone-head">
+        <span class="ss-zone-label" style="color:var(--osr)">OSR</span>
+        <span class="ss-zone-count">0</span>
+      </div>
+      <div class="ss-tech-list"><span style="font-size:12px;color:var(--dim);">—</span></div>
+    </div><div class="ss-zone">
+      <div class="ss-zone-head">
+        <span class="ss-zone-label" style="color:var(--osr)">SP + FLOW</span>
+        <span class="ss-zone-count">3</span>
+      </div>
+      <div class="ss-tech-list"><div class="ss-tech"><span style="display:flex;align-items:center;gap:6px;min-width:0;"><span class="ss-dot" style="background:var(--osr);flex-shrink:0;"></span>Sergio Santaella</span></div><div class="ss-tech"><span style="display:flex;align-items:center;gap:6px;min-width:0;"><span class="ss-dot" style="background:var(--osr);flex-shrink:0;"></span>Angel A</span></div><div class="ss-tech"><span style="display:flex;align-items:center;gap:6px;min-width:0;"><span class="ss-dot" style="background:var(--osr);flex-shrink:0;"></span>Jose Manuel</span></div></div>
+    </div><div class="ss-zone">
+      <div class="ss-zone-head">
+        <span class="ss-zone-label" style="color:var(--busy)">Trainer</span>
+        <span class="ss-zone-count">0</span>
+      </div>
+      <div class="ss-tech-list"><span style="font-size:12px;color:var(--dim);">—</span></div>
+    </div>
+    </div></div>
+  <div class="checklist-card" style="max-width:480px;">
+    <div class="checklist-label">Starting shift checklist</div>
+    <div id="checklist">
+    <div class="check-item" id="ci-0">
+      <input type="checkbox" id="cb-0" onchange="toggleCheck(0)">
+      <label for="cb-0">Abrir WO</label>
+    </div>
+    <div class="check-item" id="ci-1">
+      <input type="checkbox" id="cb-1" onchange="toggleCheck(1)">
+      <label for="cb-1">Chequear Aturnos</label>
+    </div>
+    <div class="check-item" id="ci-2">
+      <input type="checkbox" id="cb-2" onchange="toggleCheck(2)">
+      <label for="cb-2">Asignar 5S Work Orders</label>
+    </div>
+    <div class="check-item" id="ci-3">
+      <input type="checkbox" id="cb-3" onchange="toggleCheck(3)">
+      <label for="cb-3">Asignar PPM</label>
+    </div>
+    <div class="check-item" id="ci-4">
+      <input type="checkbox" id="cb-4" onchange="toggleCheck(4)">
+      <label for="cb-4">Chequear Planner</label>
+    </div>
+    <div class="check-item" id="ci-5">
+      <input type="checkbox" id="cb-5" onchange="toggleCheck(5)">
+      <label for="cb-5">Tareas pendientes turno anterior</label>
+    </div></div>
   </div>
 </div>
 
@@ -484,17 +723,17 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
     <div class="paste-header">
       <div>
         <div class="paste-title">Importar turno</div>
-        <div class="paste-sub" id="paste-sub-msg">Pega el texto de Aturnos para actualizar la tabla del día</div>
+        <div class="paste-sub" id="paste-sub-msg" style="color: var(--flex);">Night cargado hace 1823min · 22 en turno · 1 extras</div>
       </div>
       <button class="paste-toggle" onclick="togglePaste()">Cargar XLS</button>
     </div>
     <div class="paste-body hidden" id="paste-body">
       <div style="display:flex;gap:8px;margin-bottom:10px;align-items:center;">
-        <span style="font-size:12px;color:var(--muted);font-family:'Roboto Mono',monospace;text-transform:uppercase;letter-spacing:.05em;">Mi turno:</span>
+        <span style="font-size:12px;color:var(--muted);font-family:&#39;Roboto Mono&#39;,monospace;text-transform:uppercase;letter-spacing:.05em;">Mi turno:</span>
         <div style="display:flex;gap:5px;">
-          <button class="zone-btn sel-fp" id="shift-btn-M" onclick="selectPasteShift('M',this)" style="font-family:'Roboto Mono',monospace;font-size:11px;">Morning</button>
-          <button class="zone-btn" id="shift-btn-A" onclick="selectPasteShift('A',this)" style="font-family:'Roboto Mono',monospace;font-size:11px;">Afternoon</button>
-          <button class="zone-btn" id="shift-btn-N" onclick="selectPasteShift('N',this)" style="font-family:'Roboto Mono',monospace;font-size:11px;">Night</button>
+          <button class="zone-btn sel-fp" id="shift-btn-M" onclick="selectPasteShift(&#39;M&#39;,this)" style="font-family:&#39;Roboto Mono&#39;,monospace;font-size:11px;">Morning</button>
+          <button class="zone-btn" id="shift-btn-A" onclick="selectPasteShift(&#39;A&#39;,this)" style="font-family:&#39;Roboto Mono&#39;,monospace;font-size:11px;">Afternoon</button>
+          <button class="zone-btn" id="shift-btn-N" onclick="selectPasteShift(&#39;N&#39;,this)" style="font-family:&#39;Roboto Mono&#39;,monospace;font-size:11px;">Night</button>
         </div>
       </div>
       <div style="display:flex;flex-direction:column;gap:8px;">
@@ -514,10 +753,73 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
   <!-- ALERTS -->
   <div id="mp-alerts" style="margin-bottom:12px;"></div>
 
-  <!-- SEARCH -->
-  <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+  <!-- SEARCH + ZONE EDITOR -->
+  <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
     <div class="s-box" style="flex:1;"><input type="text" id="mp-search" placeholder="Buscar técnico..." oninput="renderMP()"></div>
+    <button class="btn" onclick="toggleZoneEditor()" id="btn-zone-editor" style="white-space:nowrap;font-family:&#39;Roboto Mono&#39;,monospace;font-size:11px;">Zonas ▾</button>
     <button class="btn" onclick="resetPlanning()" style="white-space:nowrap;border-color:var(--sick);color:var(--sick);">↺ Reiniciar tabla</button>
+  </div>
+
+  <!-- ZONE EDITOR PANEL -->
+  <div id="zone-editor-panel" style="display:none;background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:12px;">
+    <div style="font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-family:&#39;Roboto Mono&#39;,monospace;color:var(--muted);margin-bottom:10px;">Zonas / roles disponibles</div>
+    <div id="zone-options-list" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
+    <span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px 3px 12px;border-radius:20px;background:var(--s2);border:1px solid var(--border);font-size:12px;font-family:&#39;Roboto Mono&#39;,monospace;">
+      FP
+      <span onclick="removeZoneOption(" fp")"="" style="cursor:pointer;color:var(--dim);font-size:15px;line-height:1;margin-left:2px;" title="Eliminar">×</span>
+    </span>
+    <span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px 3px 12px;border-radius:20px;background:var(--s2);border:1px solid var(--border);font-size:12px;font-family:&#39;Roboto Mono&#39;,monospace;">
+      GOH
+      <span onclick="removeZoneOption(" goh")"="" style="cursor:pointer;color:var(--dim);font-size:15px;line-height:1;margin-left:2px;" title="Eliminar">×</span>
+    </span>
+    <span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px 3px 12px;border-radius:20px;background:var(--s2);border:1px solid var(--border);font-size:12px;font-family:&#39;Roboto Mono&#39;,monospace;">
+      FLEX
+      <span onclick="removeZoneOption(" flex")"="" style="cursor:pointer;color:var(--dim);font-size:15px;line-height:1;margin-left:2px;" title="Eliminar">×</span>
+    </span>
+    <span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px 3px 12px;border-radius:20px;background:var(--s2);border:1px solid var(--border);font-size:12px;font-family:&#39;Roboto Mono&#39;,monospace;">
+      OSR
+      <span onclick="removeZoneOption(" osr")"="" style="cursor:pointer;color:var(--dim);font-size:15px;line-height:1;margin-left:2px;" title="Eliminar">×</span>
+    </span>
+    <span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px 3px 12px;border-radius:20px;background:var(--s2);border:1px solid var(--border);font-size:12px;font-family:&#39;Roboto Mono&#39;,monospace;">
+      TL
+      <span onclick="removeZoneOption(" tl")"="" style="cursor:pointer;color:var(--dim);font-size:15px;line-height:1;margin-left:2px;" title="Eliminar">×</span>
+    </span>
+    <span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px 3px 12px;border-radius:20px;background:var(--s2);border:1px solid var(--border);font-size:12px;font-family:&#39;Roboto Mono&#39;,monospace;">
+      FLOW
+      <span onclick="removeZoneOption(" flow")"="" style="cursor:pointer;color:var(--dim);font-size:15px;line-height:1;margin-left:2px;" title="Eliminar">×</span>
+    </span>
+    <span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px 3px 12px;border-radius:20px;background:var(--s2);border:1px solid var(--border);font-size:12px;font-family:&#39;Roboto Mono&#39;,monospace;">
+      SP
+      <span onclick="removeZoneOption(" sp")"="" style="cursor:pointer;color:var(--dim);font-size:15px;line-height:1;margin-left:2px;" title="Eliminar">×</span>
+    </span>
+    <span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px 3px 12px;border-radius:20px;background:var(--s2);border:1px solid var(--border);font-size:12px;font-family:&#39;Roboto Mono&#39;,monospace;">
+      S FP
+      <span onclick="removeZoneOption(" s="" fp")"="" style="cursor:pointer;color:var(--dim);font-size:15px;line-height:1;margin-left:2px;" title="Eliminar">×</span>
+    </span>
+    <span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px 3px 12px;border-radius:20px;background:var(--s2);border:1px solid var(--border);font-size:12px;font-family:&#39;Roboto Mono&#39;,monospace;">
+      S GOH
+      <span onclick="removeZoneOption(" s="" goh")"="" style="cursor:pointer;color:var(--dim);font-size:15px;line-height:1;margin-left:2px;" title="Eliminar">×</span>
+    </span>
+    <span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px 3px 12px;border-radius:20px;background:var(--s2);border:1px solid var(--border);font-size:12px;font-family:&#39;Roboto Mono&#39;,monospace;">
+      TRAINER
+      <span onclick="removeZoneOption(" trainer")"="" style="cursor:pointer;color:var(--dim);font-size:15px;line-height:1;margin-left:2px;" title="Eliminar">×</span>
+    </span>
+    <span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px 3px 12px;border-radius:20px;background:var(--s2);border:1px solid var(--border);font-size:12px;font-family:&#39;Roboto Mono&#39;,monospace;">
+      SICK
+      <span style="font-size:10px;color:var(--dim);margin-left:2px;" title="Sistema">🔒</span>
+    </span>
+    <span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px 3px 12px;border-radius:20px;background:var(--s2);border:1px solid var(--border);font-size:12px;font-family:&#39;Roboto Mono&#39;,monospace;">
+      H
+      <span style="font-size:10px;color:var(--dim);margin-left:2px;" title="Sistema">🔒</span>
+    </span>
+    <span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px 3px 12px;border-radius:20px;background:var(--s2);border:1px solid var(--border);font-size:12px;font-family:&#39;Roboto Mono&#39;,monospace;">
+      —
+      <span style="font-size:10px;color:var(--dim);margin-left:2px;" title="Sistema">🔒</span>
+    </span></div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <input id="new-zone-input" class="m-input" style="padding:6px 10px;max-width:180px;font-family:&#39;Roboto Mono&#39;,monospace;font-size:13px;" placeholder="Nueva zona o rol..." onkeydown="if(event.key===&#39;Enter&#39;)addZoneOption()">
+      <button class="btn btn-p" onclick="addZoneOption()" style="white-space:nowrap;">+ Añadir</button>
+    </div>
   </div>
 
   <!-- SECTION 1: STAFF FIJO -->
@@ -526,21 +828,331 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
     <table class="mp-table" id="mp-table-fixed">
       <thead><tr id="mp-thead-row">
         <th style="min-width:160px;"></th>
-        <th id="th-0" style="min-width:70px;">—</th>
-        <th id="th-1" style="min-width:70px;">—</th>
-        <th id="th-2" style="min-width:70px;">—</th>
-        <th id="th-3" style="min-width:70px;">—</th>
-        <th id="th-4" style="min-width:70px;">—</th>
-        <th id="th-5" style="min-width:70px;">—</th>
+        <th id="th-0" style="min-width:70px;">08/05</th>
+        <th id="th-1" style="min-width:70px;">11/05</th>
+        <th id="th-2" style="min-width:70px;">12/05</th>
+        <th id="th-3" style="min-width:70px;">13/05</th>
+        <th id="th-4" style="min-width:70px;">17/05</th>
+        <th id="th-5" style="min-width: 70px; background: rgba(86, 211, 100, 0.1); color: var(--flex);">17/05</th>
         <th style="min-width:70px;">Hoy</th>
       </tr></thead>
-      <tbody id="mp-tbody"></tbody>
+      <tbody id="mp-tbody"><tr><td colspan="8" style="padding:5px 12px;font-size:10px;font-weight:600;letter-spacing:.07em;color:var(--muted);font-family:&#39;Roboto Mono&#39;,monospace;text-transform:uppercase;background:var(--s2);">Maintenance Technicians (19)</td></tr><tr style="">
+      <td style="cursor:pointer;" onclick="editName(this,0)">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="mp-name">Sebastian</span>
+          
+          <span style="font-size:10px;color:var(--dim);">✎</span>
+        </div>
+      </td>
+      <td class="editable" onclick="editCell(this,0,0)"><span class="pill p-sick">SICK</span></td><td class="editable" onclick="editCell(this,0,1)"><span class="pill p-sick">SICK</span></td><td class="editable" onclick="editCell(this,0,2)"><span class="pill p-sick">SICK</span></td><td class="editable" onclick="editCell(this,0,3)"><span class="pill p-sick">SICK</span></td><td class="editable" onclick="editCell(this,0,4)"><span class="pill p-sick">SICK</span></td><td class="editable active-col" onclick="editCell(this,0,5)"><span class="pill p-sick">SICK</span></td>
+      <td><div class="hoy-zone-wrap" onclick="editTodayZone(this," sebastian")"="">
+            <span class="pill p-sick">SICK</span>
+            <span style="font-size:10px;color:var(--dim);">✎</span>
+          </div></td>
+    </tr><tr style="">
+      <td style="cursor:pointer;" onclick="editName(this,1)">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="mp-name">Sergio</span>
+          
+          <span style="font-size:10px;color:var(--dim);">✎</span>
+        </div>
+      </td>
+      <td class="editable" onclick="editCell(this,1,0)"><span class="pill p-tl">TL</span></td><td class="editable" onclick="editCell(this,1,1)"><span class="pill p-tl">TL</span></td><td class="editable" onclick="editCell(this,1,2)"><span class="pill p-tl">TL</span></td><td class="editable" onclick="editCell(this,1,3)"><span class="pill p-tl">TL</span></td><td class="editable" onclick="editCell(this,1,4)"><span class="pill p-tl">TL</span></td><td class="editable active-col" onclick="editCell(this,1,5)"><span class="pill p-tl">TL</span></td>
+      <td><div class="hoy-zone-wrap" onclick="editTodayZone(this," sergio")"="">
+            <span class="pill p-tl">TL</span>
+            <span style="font-size:10px;color:var(--dim);">✎</span>
+          </div></td>
+    </tr><tr style="">
+      <td style="cursor:pointer;" onclick="editName(this,2)">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="mp-name">Julio</span>
+          
+          <span style="font-size:10px;color:var(--dim);">✎</span>
+        </div>
+      </td>
+      <td class="editable" onclick="editCell(this,2,0)"><span class="pill p-tl">TL</span></td><td class="editable" onclick="editCell(this,2,1)"><span class="pill p-tl">TL</span></td><td class="editable" onclick="editCell(this,2,2)"><span class="pill p-tl">TL</span></td><td class="editable" onclick="editCell(this,2,3)"><span class="pill p-tl">TL</span></td><td class="editable" onclick="editCell(this,2,4)"><span class="pill p-tl">TL</span></td><td class="editable active-col" onclick="editCell(this,2,5)"><span class="pill p-tl">TL</span></td>
+      <td><div class="hoy-zone-wrap" onclick="editTodayZone(this," julio")"="">
+            <span class="pill p-tl">TL</span>
+            <span style="font-size:10px;color:var(--dim);">✎</span>
+          </div></td>
+    </tr><tr style="opacity:.45">
+      <td style="cursor:pointer;" onclick="editName(this,3)">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="mp-name">Gonza</span>
+          
+          <span style="font-size:10px;color:var(--dim);">✎</span>
+        </div>
+      </td>
+      <td class="editable" onclick="editCell(this,3,0)"><span class="pill p-tl">TL</span></td><td class="editable" onclick="editCell(this,3,1)"><span class="pill p-tl">TL</span></td><td class="editable" onclick="editCell(this,3,2)"><span class="pill p-tl">TL</span></td><td class="editable" onclick="editCell(this,3,3)"><span class="pill p-tl">TL</span></td><td class="editable" onclick="editCell(this,3,4)"><span class="pill p-tl">TL</span></td><td class="editable active-col" onclick="editCell(this,3,5)"><span class="pill p-tl">TL</span></td>
+      <td><span class="hoy-pill hoy-absent">Ausente</span></td>
+    </tr><tr style="">
+      <td style="cursor:pointer;" onclick="editName(this,4)">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="mp-name">Raul R.</span>
+          
+          <span style="font-size:10px;color:var(--dim);">✎</span>
+        </div>
+      </td>
+      <td class="editable" onclick="editCell(this,4,0)"><span class="pill p-flex">FLEX</span></td><td class="editable" onclick="editCell(this,4,1)"><span class="pill p-flex">FLEX</span></td><td class="editable" onclick="editCell(this,4,2)"><span class="pill p-flex">FLEX</span></td><td class="editable" onclick="editCell(this,4,3)"><span class="pill p-flex">FLEX</span></td><td class="editable" onclick="editCell(this,4,4)"><span class="pill p-flex">FLEX</span></td><td class="editable active-col" onclick="editCell(this,4,5)"><span class="pill p-flex">FLEX</span></td>
+      <td><div class="hoy-zone-wrap" onclick="editTodayZone(this," raul="" r.")"="">
+            <span class="pill p-flex">FLEX</span>
+            <span style="font-size:10px;color:var(--dim);">✎</span>
+          </div></td>
+    </tr><tr style="">
+      <td style="cursor:pointer;" onclick="editName(this,5)">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="mp-name">Jorge A.</span>
+          
+          <span style="font-size:10px;color:var(--dim);">✎</span>
+        </div>
+      </td>
+      <td class="editable" onclick="editCell(this,5,0)"><span class="pill p-flex">FLEX</span></td><td class="editable" onclick="editCell(this,5,1)"><span class="pill p-flex">FLEX</span></td><td class="editable" onclick="editCell(this,5,2)"><span class="pill p-h">H</span></td><td class="editable" onclick="editCell(this,5,3)"><span class="pill p-flex">FLEX</span></td><td class="editable" onclick="editCell(this,5,4)"><span class="pill p-flex">FLEX</span></td><td class="editable active-col" onclick="editCell(this,5,5)"><span class="pill p-flex">FLEX</span></td>
+      <td><div class="hoy-zone-wrap" onclick="editTodayZone(this," jorge="" a.")"="">
+            <span class="pill p-flex">FLEX</span>
+            <span style="font-size:10px;color:var(--dim);">✎</span>
+          </div></td>
+    </tr><tr style="">
+      <td style="cursor:pointer;" onclick="editName(this,6)">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="mp-name">Iago C.</span>
+          
+          <span style="font-size:10px;color:var(--dim);">✎</span>
+        </div>
+      </td>
+      <td class="editable" onclick="editCell(this,6,0)"><span class="pill p-flex">FLEX</span></td><td class="editable" onclick="editCell(this,6,1)"><span class="pill p-flex">FLEX</span></td><td class="editable" onclick="editCell(this,6,2)"><span class="pill p-flex">FLEX</span></td><td class="editable" onclick="editCell(this,6,3)"><span class="pill p-flex">FLEX</span></td><td class="editable" onclick="editCell(this,6,4)"><span class="pill p-flex">FLEX</span></td><td class="editable active-col" onclick="editCell(this,6,5)"><span class="pill p-flex">FLEX</span></td>
+      <td><div class="hoy-zone-wrap" onclick="editTodayZone(this," iago="" c.")"="">
+            <span class="pill p-flex">FLEX</span>
+            <span style="font-size:10px;color:var(--dim);">✎</span>
+          </div></td>
+    </tr><tr style="">
+      <td style="cursor:pointer;" onclick="editName(this,7)">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="mp-name">Adrian B.</span>
+          
+          <span style="font-size:10px;color:var(--dim);">✎</span>
+        </div>
+      </td>
+      <td class="editable" onclick="editCell(this,7,0)"><span class="pill p-flex">FLEX</span></td><td class="editable" onclick="editCell(this,7,1)"><span class="pill p-flex">FLEX</span></td><td class="editable" onclick="editCell(this,7,2)"><span class="pill p-flex">FLEX</span></td><td class="editable" onclick="editCell(this,7,3)"><span class="pill p-flex">FLEX</span></td><td class="editable" onclick="editCell(this,7,4)"><span class="pill p-flex">FLEX</span></td><td class="editable active-col" onclick="editCell(this,7,5)"><span class="pill p-flex">FLEX</span></td>
+      <td><div class="hoy-zone-wrap" onclick="editTodayZone(this," adrian="" b.")"="">
+            <span class="pill p-flex">FLEX</span>
+            <span style="font-size:10px;color:var(--dim);">✎</span>
+          </div></td>
+    </tr><tr style="opacity:.45">
+      <td style="cursor:pointer;" onclick="editName(this,8)">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="mp-name">Marcos T.</span>
+          
+          <span style="font-size:10px;color:var(--dim);">✎</span>
+        </div>
+      </td>
+      <td class="editable" onclick="editCell(this,8,0)"><span class="pill p-flex">FLEX</span></td><td class="editable" onclick="editCell(this,8,1)"><span class="pill p-flex">FLEX</span></td><td class="editable" onclick="editCell(this,8,2)"><span class="pill p-flex">FLEX</span></td><td class="editable" onclick="editCell(this,8,3)"><span class="pill p-flex">FLEX</span></td><td class="editable" onclick="editCell(this,8,4)"><span class="pill p-flex">FLEX</span></td><td class="editable active-col" onclick="editCell(this,8,5)"><span class="pill p-flex">FLEX</span></td>
+      <td><span class="hoy-pill hoy-absent">Ausente</span></td>
+    </tr><tr style="">
+      <td style="cursor:pointer;" onclick="editName(this,9)">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="mp-name">Sergio Benavides</span>
+          
+          <span style="font-size:10px;color:var(--dim);">✎</span>
+        </div>
+      </td>
+      <td class="editable" onclick="editCell(this,9,0)"><span class="pill p-flex">FLEX</span></td><td class="editable" onclick="editCell(this,9,1)"><span class="pill p-flex">FLEX</span></td><td class="editable" onclick="editCell(this,9,2)"><span class="pill p-flex">FLEX</span></td><td class="editable" onclick="editCell(this,9,3)"><span class="pill p-flex">FLEX</span></td><td class="editable" onclick="editCell(this,9,4)"><span class="pill p-flex">FLEX</span></td><td class="editable active-col" onclick="editCell(this,9,5)"><span class="pill p-flex">FLEX</span></td>
+      <td><div class="hoy-zone-wrap" onclick="editTodayZone(this," sergio="" benavides")"="">
+            <span class="pill p-flex">FLEX</span>
+            <span style="font-size:10px;color:var(--dim);">✎</span>
+          </div></td>
+    </tr><tr style="">
+      <td style="cursor:pointer;" onclick="editName(this,10)">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="mp-name">Guillermo Garcia</span>
+          
+          <span style="font-size:10px;color:var(--dim);">✎</span>
+        </div>
+      </td>
+      <td class="editable" onclick="editCell(this,10,0)"><span class="pill p-flex">FLEX</span></td><td class="editable" onclick="editCell(this,10,1)"><span class="pill p-flex">FLEX</span></td><td class="editable" onclick="editCell(this,10,2)"><span class="pill p-flex">FLEX</span></td><td class="editable" onclick="editCell(this,10,3)"><span class="pill p-flex">FLEX</span></td><td class="editable" onclick="editCell(this,10,4)"><span class="pill p-flex">FLEX</span></td><td class="editable active-col" onclick="editCell(this,10,5)"><span class="pill p-flex">FLEX</span></td>
+      <td><div class="hoy-zone-wrap" onclick="editTodayZone(this," guillermo="" garcia")"="">
+            <span class="pill p-flex">FLEX</span>
+            <span style="font-size:10px;color:var(--dim);">✎</span>
+          </div></td>
+    </tr><tr style="">
+      <td style="cursor:pointer;" onclick="editName(this,11)">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="mp-name">Sergio Santaella</span>
+          
+          <span style="font-size:10px;color:var(--dim);">✎</span>
+        </div>
+      </td>
+      <td class="editable" onclick="editCell(this,11,0)"><span class="pill p-flow">FLOW</span></td><td class="editable" onclick="editCell(this,11,1)"><span class="pill p-flow">FLOW</span></td><td class="editable" onclick="editCell(this,11,2)"><span class="pill p-flow">FLOW</span></td><td class="editable" onclick="editCell(this,11,3)"><span class="pill p-flow">FLOW</span></td><td class="editable" onclick="editCell(this,11,4)"><span class="pill p-flow">FLOW</span></td><td class="editable active-col" onclick="editCell(this,11,5)"><span class="pill p-flow">FLOW</span></td>
+      <td><div class="hoy-zone-wrap" onclick="editTodayZone(this," sergio="" santaella")"="">
+            <span class="pill p-flow">FLOW</span>
+            <span style="font-size:10px;color:var(--dim);">✎</span>
+          </div></td>
+    </tr><tr style="">
+      <td style="cursor:pointer;" onclick="editName(this,12)">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="mp-name">Eduardo Sienes</span>
+          
+          <span style="font-size:10px;color:var(--dim);">✎</span>
+        </div>
+      </td>
+      <td class="editable" onclick="editCell(this,12,0)"><span class="pill p-goh">GOH</span></td><td class="editable" onclick="editCell(this,12,1)"><span class="pill p-goh">GOH</span></td><td class="editable" onclick="editCell(this,12,2)"><span class="pill p-goh">GOH</span></td><td class="editable" onclick="editCell(this,12,3)"><span class="pill p-goh">GOH</span></td><td class="editable" onclick="editCell(this,12,4)"><span class="pill p-goh">GOH</span></td><td class="editable active-col" onclick="editCell(this,12,5)"><span class="pill p-goh">GOH</span></td>
+      <td><div class="hoy-zone-wrap" onclick="editTodayZone(this," eduardo="" sienes")"="">
+            <span class="pill p-goh">GOH</span>
+            <span style="font-size:10px;color:var(--dim);">✎</span>
+          </div></td>
+    </tr><tr style="">
+      <td style="cursor:pointer;" onclick="editName(this,13)">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="mp-name">Juan Suárez</span>
+          
+          <span style="font-size:10px;color:var(--dim);">✎</span>
+        </div>
+      </td>
+      <td class="editable" onclick="editCell(this,13,0)"><span class="pill p-sgoh">S GOH</span></td><td class="editable" onclick="editCell(this,13,1)"><span class="pill p-goh">GOH</span></td><td class="editable" onclick="editCell(this,13,2)"><span class="pill p-goh">GOH</span></td><td class="editable" onclick="editCell(this,13,3)"><span class="pill p-goh">GOH</span></td><td class="editable" onclick="editCell(this,13,4)"><span class="pill p-goh">GOH</span></td><td class="editable active-col" onclick="editCell(this,13,5)"><span class="pill p-goh">GOH</span></td>
+      <td><div class="hoy-zone-wrap" onclick="editTodayZone(this," juan="" suárez")"="">
+            <span class="pill p-goh">GOH</span>
+            <span style="font-size:10px;color:var(--dim);">✎</span>
+          </div></td>
+    </tr><tr style="">
+      <td style="cursor:pointer;" onclick="editName(this,14)">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="mp-name">Alejandro G.</span>
+          
+          <span style="font-size:10px;color:var(--dim);">✎</span>
+        </div>
+      </td>
+      <td class="editable" onclick="editCell(this,14,0)"><span class="pill p-goh">GOH</span></td><td class="editable" onclick="editCell(this,14,1)"><span class="pill p-goh">GOH</span></td><td class="editable" onclick="editCell(this,14,2)"><span class="pill p-goh">GOH</span></td><td class="editable" onclick="editCell(this,14,3)"><span class="pill p-goh">GOH</span></td><td class="editable" onclick="editCell(this,14,4)"><span class="pill p-goh">GOH</span></td><td class="editable active-col" onclick="editCell(this,14,5)"><span class="pill p-goh">GOH</span></td>
+      <td><div class="hoy-zone-wrap" onclick="editTodayZone(this," alejandro="" g.")"="">
+            <span class="pill p-goh">GOH</span>
+            <span style="font-size:10px;color:var(--dim);">✎</span>
+          </div></td>
+    </tr><tr style="">
+      <td style="cursor:pointer;" onclick="editName(this,15)">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="mp-name">Borja S.</span>
+          
+          <span style="font-size:10px;color:var(--dim);">✎</span>
+        </div>
+      </td>
+      <td class="editable" onclick="editCell(this,15,0)"><span class="pill p-fp">FP</span></td><td class="editable" onclick="editCell(this,15,1)"><span class="pill p-fp">FP</span></td><td class="editable" onclick="editCell(this,15,2)"><span class="pill p-fp">FP</span></td><td class="editable" onclick="editCell(this,15,3)"><span class="pill p-fp">FP</span></td><td class="editable" onclick="editCell(this,15,4)"><span class="pill p-fp">FP</span></td><td class="editable active-col" onclick="editCell(this,15,5)"><span class="pill p-fp">FP</span></td>
+      <td><div class="hoy-zone-wrap" onclick="editTodayZone(this," borja="" s.")"="">
+            <span class="pill p-fp">FP</span>
+            <span style="font-size:10px;color:var(--dim);">✎</span>
+          </div></td>
+    </tr><tr style="">
+      <td style="cursor:pointer;" onclick="editName(this,16)">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="mp-name">Paula S.</span>
+          
+          <span style="font-size:10px;color:var(--dim);">✎</span>
+        </div>
+      </td>
+      <td class="editable" onclick="editCell(this,16,0)"><span class="pill p-fp">FP</span></td><td class="editable" onclick="editCell(this,16,1)"><span class="pill p-fp">FP</span></td><td class="editable" onclick="editCell(this,16,2)"><span class="pill p-fp">FP</span></td><td class="editable" onclick="editCell(this,16,3)"><span class="pill p-fp">FP</span></td><td class="editable" onclick="editCell(this,16,4)"><span class="pill p-fp">FP</span></td><td class="editable active-col" onclick="editCell(this,16,5)"><span class="pill p-fp">FP</span></td>
+      <td><div class="hoy-zone-wrap" onclick="editTodayZone(this," paula="" s.")"="">
+            <span class="pill p-fp">FP</span>
+            <span style="font-size:10px;color:var(--dim);">✎</span>
+          </div></td>
+    </tr><tr style="">
+      <td style="cursor:pointer;" onclick="editName(this,17)">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="mp-name">Sergio Cuco</span>
+          
+          <span style="font-size:10px;color:var(--dim);">✎</span>
+        </div>
+      </td>
+      <td class="editable" onclick="editCell(this,17,0)"><span class="pill p-fp">FP</span></td><td class="editable" onclick="editCell(this,17,1)"><span class="pill p-fp">FP</span></td><td class="editable" onclick="editCell(this,17,2)"><span class="pill p-fp">FP</span></td><td class="editable" onclick="editCell(this,17,3)"><span class="pill p-fp">FP</span></td><td class="editable" onclick="editCell(this,17,4)"><span class="pill p-fp">FP</span></td><td class="editable active-col" onclick="editCell(this,17,5)"><span class="pill p-fp">FP</span></td>
+      <td><div class="hoy-zone-wrap" onclick="editTodayZone(this," sergio="" cuco")"="">
+            <span class="pill p-fp">FP</span>
+            <span style="font-size:10px;color:var(--dim);">✎</span>
+          </div></td>
+    </tr><tr style="">
+      <td style="cursor:pointer;" onclick="editName(this,22)">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="mp-name">Chema</span>
+          
+          <span style="font-size:10px;color:var(--dim);">✎</span>
+        </div>
+      </td>
+      <td class="editable" onclick="editCell(this,22,0)"><span class="pill p-sick">SICK</span></td><td class="editable" onclick="editCell(this,22,1)"><span class="pill p-sick">SICK</span></td><td class="editable" onclick="editCell(this,22,2)"><span class="pill p-sick">SICK</span></td><td class="editable" onclick="editCell(this,22,3)"><span class="pill p-sick">SICK</span></td><td class="editable" onclick="editCell(this,22,4)"><span class="pill p-sick">SICK</span></td><td class="editable active-col" onclick="editCell(this,22,5)"><span class="pill p-sick">SICK</span></td>
+      <td><span class="hoy-pill hoy-absent">Ausente</span></td>
+    </tr><tr><td colspan="8" style="padding:5px 12px;font-size:10px;font-weight:600;letter-spacing:.07em;color:var(--muted);font-family:&#39;Roboto Mono&#39;,monospace;text-transform:uppercase;background:var(--s2);">Production Assistants (6)</td></tr><tr style="">
+      <td style="cursor:pointer;" onclick="editName(this,18)">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="mp-name">Angel A</span>
+          
+          <span style="font-size:10px;color:var(--dim);">✎</span>
+        </div>
+      </td>
+      <td class="editable" onclick="editCell(this,18,0)"><span class="pill p-h">H</span></td><td class="editable" onclick="editCell(this,18,1)"><span class="pill p-h">H</span></td><td class="editable" onclick="editCell(this,18,2)"><span class="pill p-h">H</span></td><td class="editable" onclick="editCell(this,18,3)"><span class="pill p-h">H</span></td><td class="editable" onclick="editCell(this,18,4)"><span class="pill p-h">H</span></td><td class="editable active-col" onclick="editCell(this,18,5)"><span class="pill p-h">H</span></td>
+      <td><div class="hoy-zone-wrap" onclick="editTodayZone(this," angel="" a")"="">
+            <span class="pill p-sp">SP</span>
+            <span style="font-size:10px;color:var(--dim);">✎</span>
+          </div></td>
+    </tr><tr style="">
+      <td style="cursor:pointer;" onclick="editName(this,19)">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="mp-name">Borisz M.</span>
+          
+          <span style="font-size:10px;color:var(--dim);">✎</span>
+        </div>
+      </td>
+      <td class="editable" onclick="editCell(this,19,0)"><span class="pill p-sgoh">S GOH</span></td><td class="editable" onclick="editCell(this,19,1)"><span class="pill p-sgoh">S GOH</span></td><td class="editable" onclick="editCell(this,19,2)"><span class="pill p-sgoh">S GOH</span></td><td class="editable" onclick="editCell(this,19,3)"><span class="pill p-sgoh">S GOH</span></td><td class="editable" onclick="editCell(this,19,4)"><span class="pill p-sgoh">S GOH</span></td><td class="editable active-col" onclick="editCell(this,19,5)"><span class="pill p-sgoh">S GOH</span></td>
+      <td><div class="hoy-zone-wrap" onclick="editTodayZone(this," borisz="" m.")"="">
+            <span class="pill p-sgoh">S GOH</span>
+            <span style="font-size:10px;color:var(--dim);">✎</span>
+          </div></td>
+    </tr><tr style="opacity:.45">
+      <td style="cursor:pointer;" onclick="editName(this,20)">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="mp-name">Borja ruiz</span>
+          
+          <span style="font-size:10px;color:var(--dim);">✎</span>
+        </div>
+      </td>
+      <td class="editable" onclick="editCell(this,20,0)"><span class="pill p-osr">OSR</span></td><td class="editable" onclick="editCell(this,20,1)"><span class="pill p-osr">OSR</span></td><td class="editable" onclick="editCell(this,20,2)"><span class="pill p-sgoh">S GOH</span></td><td class="editable" onclick="editCell(this,20,3)"><span class="pill p-osr">OSR</span></td><td class="editable" onclick="editCell(this,20,4)"><span class="pill p-sgoh">S GOH</span></td><td class="editable active-col" onclick="editCell(this,20,5)"><span class="pill p-sgoh">S GOH</span></td>
+      <td><span class="hoy-pill hoy-absent">Ausente</span></td>
+    </tr><tr style="opacity:.45">
+      <td style="cursor:pointer;" onclick="editName(this,21)">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="mp-name">Carlos R.C.</span>
+          
+          <span style="font-size:10px;color:var(--dim);">✎</span>
+        </div>
+      </td>
+      <td class="editable" onclick="editCell(this,21,0)"><span class="pill p-h">H</span></td><td class="editable" onclick="editCell(this,21,1)"><span class="pill p-sfp">S FP</span></td><td class="editable" onclick="editCell(this,21,2)"><span class="pill p-sfp">S FP</span></td><td class="editable" onclick="editCell(this,21,3)"><span class="pill p-sfp">S FP</span></td><td class="editable" onclick="editCell(this,21,4)"><span class="pill p-h">H</span></td><td class="editable active-col" onclick="editCell(this,21,5)"><span class="pill p-sfp">S FP</span></td>
+      <td><span class="hoy-pill hoy-absent">Ausente</span></td>
+    </tr><tr style="">
+      <td style="cursor:pointer;" onclick="editName(this,23)">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="mp-name">Jose Manuel</span>
+          
+          <span style="font-size:10px;color:var(--dim);">✎</span>
+        </div>
+      </td>
+      <td class="editable" onclick="editCell(this,23,0)"><span class="pill p-sp">SP</span></td><td class="editable" onclick="editCell(this,23,1)"><span class="pill p-sp">SP</span></td><td class="editable" onclick="editCell(this,23,2)"><span class="pill p-sp">SP</span></td><td class="editable" onclick="editCell(this,23,3)"><span class="pill p-sp">SP</span></td><td class="editable" onclick="editCell(this,23,4)"><span class="pill p-sp">SP</span></td><td class="editable active-col" onclick="editCell(this,23,5)"><span class="pill p-sp">SP</span></td>
+      <td><div class="hoy-zone-wrap" onclick="editTodayZone(this," jose="" manuel")"="">
+            <span class="pill p-sp">SP</span>
+            <span style="font-size:10px;color:var(--dim);">✎</span>
+          </div></td>
+    </tr><tr style="">
+      <td style="cursor:pointer;" onclick="editName(this,24)">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="mp-name">Leonardo</span>
+          
+          <span style="font-size:10px;color:var(--dim);">✎</span>
+        </div>
+      </td>
+      <td class="editable" onclick="editCell(this,24,0)"><span class="pill p-sfp">S FP</span></td><td class="editable" onclick="editCell(this,24,1)"><span class="pill p-sfp">S FP</span></td><td class="editable" onclick="editCell(this,24,2)"><span class="pill p-sfp">S FP</span></td><td class="editable" onclick="editCell(this,24,3)"><span class="pill p-h">H</span></td><td class="editable" onclick="editCell(this,24,4)"><span class="pill p-sfp">S FP</span></td><td class="editable active-col" onclick="editCell(this,24,5)"><span class="pill p-sfp">S FP</span></td>
+      <td><div class="hoy-zone-wrap" onclick="editTodayZone(this," leonardo")"="">
+            <span class="pill p-sfp">S FP</span>
+            <span style="font-size:10px;color:var(--dim);">✎</span>
+          </div></td>
+    </tr></tbody>
     </table>
   </div>
 
   <!-- SECTION 2: EXTRAS DEL TURNO -->
   <div id="mp-extras-section" style="display:none;">
-    <div class="mp-section-title" style="color:var(--osr);">Extras del turno <span id="mp-extras-count" style="font-family:'Roboto Mono',monospace;font-size:11px;opacity:.7;"></span></div>
+    <div class="mp-section-title" style="color:var(--osr);">Extras del turno <span id="mp-extras-count" style="font-family:&#39;Roboto Mono&#39;,monospace;font-size:11px;opacity:.7;"></span></div>
     <div class="mp-wrap" style="margin-bottom:16px;">
       <table class="mp-table">
         <thead><tr>
@@ -554,8 +1166,8 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
   </div>
 
   <!-- SECTION 3: 5/2 -->
-  <div id="mp-52-section" style="display:none;">
-    <div class="mp-section-title" style="color:var(--osr);">Extras en turno <span style="font-family:'Roboto Mono',monospace;font-size:11px;opacity:.7;">(asigna zona para que aparezcan como disponibles)</span></div>
+  <div id="mp-52-section" style="display: block;">
+    <div class="mp-section-title" style="color:var(--osr);">Extras en turno <span style="font-family:&#39;Roboto Mono&#39;,monospace;font-size:11px;opacity:.7;">(asigna zona para que aparezcan como disponibles)</span></div>
     <div class="mp-wrap">
       <table class="mp-table">
         <thead><tr>
@@ -563,7 +1175,14 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
           <th style="min-width:120px;">Zona (asignar si necesario)</th>
           <th style="min-width:80px;">Horario</th>
         </tr></thead>
-        <tbody id="mp-52-tbody"></tbody>
+        <tbody id="mp-52-tbody"><tr><td colspan="3" style="padding:6px 12px;font-size:10px;font-weight:600;letter-spacing:.07em;color:var(--osr);font-family:&#39;Roboto Mono&#39;,monospace;text-transform:uppercase;background:var(--s2);">★ Extras puntuales (1)</td></tr><tr style="">
+    <td>Carlos Pérez Castro</td>
+    <td>
+      <span class="pill p-sp">S GOH</span>
+           <span style="font-size:11px;color:var(--dim);cursor:pointer;margin-left:6px;" onclick="set52ZoneClear(0)" title="Cambiar zona">✎</span>
+    </td>
+    <td style="font-family:&#39;Roboto Mono&#39;,monospace;font-size:11px;color:var(--muted);">21:45-06:15</td>
+  </tr></tbody>
       </table>
     </div>
   </div>
@@ -576,11 +1195,11 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
   <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center;">
     <div class="s-box" style="flex:1;"><input type="text" id="workers-search" placeholder="Buscar trabajador..." oninput="renderWorkers()"></div>
     <div class="f-grp" id="team-filters">
-      <button class="fb" onclick="setTeamFilter('all',this)" id="tf-all" style="border-color:var(--flex);color:var(--flex);">Todos</button>
-      <button class="fb" onclick="setTeamFilter('Team C',this)">Team C</button>
-      <button class="fb" onclick="setTeamFilter('Team 1',this)">Team 1</button>
-      <button class="fb" onclick="setTeamFilter('Team 2',this)">Team 2</button>
-      <button class="fb" onclick="setTeamFilter('other',this)">Otros</button>
+      <button class="fb" onclick="setTeamFilter(&#39;all&#39;,this)" id="tf-all" style="border-color:var(--flex);color:var(--flex);">Todos</button>
+      <button class="fb" onclick="setTeamFilter(&#39;Team C&#39;,this)">Team C</button>
+      <button class="fb" onclick="setTeamFilter(&#39;Team 1&#39;,this)">Team 1</button>
+      <button class="fb" onclick="setTeamFilter(&#39;Team 2&#39;,this)">Team 2</button>
+      <button class="fb" onclick="setTeamFilter(&#39;other&#39;,this)">Otros</button>
     </div>
     <button class="btn btn-p" onclick="openAddWorker()" style="white-space:nowrap;">+ Añadir</button>
   </div>
@@ -632,7 +1251,7 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
     </div>
     <div style="display:flex;gap:8px;">
       <button class="btn btn-p" onclick="saveNewWorker()">Guardar</button>
-      <button class="btn" onclick="document.getElementById('add-worker-form').style.display='none'">Cancelar</button>
+      <button class="btn" onclick="document.getElementById(&#39;add-worker-form&#39;).style.display=&#39;none&#39;">Cancelar</button>
     </div>
   </div>
 
@@ -651,7 +1270,7 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
 
   <!-- Import button -->
   <div style="margin-top:16px;padding:14px;background:var(--s1);border:1px solid var(--border);border-radius:var(--r);">
-    <div style="font-size:11px;color:var(--muted);font-family:'Roboto Mono',monospace;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Importar trabajadores a Firebase</div>
+    <div style="font-size:11px;color:var(--muted);font-family:&#39;Roboto Mono&#39;,monospace;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Importar trabajadores a Firebase</div>
     <p style="font-size:12px;color:var(--muted);margin-bottom:10px;">Sube todos los trabajadores a la colección <code>workers</code> de Firebase. Solo es necesario hacerlo una vez.</p>
     <button class="btn btn-p" onclick="importWorkersToFirebase()" id="btn-import-workers">Importar a Firebase</button>
     <button class="btn" onclick="fixWorkerShortNames()" style="margin-left:8px;">Corregir nombres cortos</button>
@@ -664,18 +1283,17 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
   <div style="max-width:600px;margin:0 auto;">
     <div style="margin-bottom:16px;">
       <div class="m-lbl2" style="margin-bottom:6px;">Buscar máquina / conveyor / cadena</div>
-      <input type="text" id="qr-search" class="m-input" style="font-size:16px;padding:12px 14px;"
-        placeholder="Nombre o código de máquina..." oninput="searchMachines()">
+      <input type="text" id="qr-search" class="m-input" style="font-size:16px;padding:12px 14px;" placeholder="Nombre o código de máquina..." oninput="searchMachines()">
     </div>
     <div id="qr-results" style="margin-bottom:16px;"></div>
     <div id="qr-output" style="display:none;background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:24px;text-align:center;">
       <div id="qr-machine-name" style="font-size:16px;font-weight:600;margin-bottom:4px;"></div>
-      <div id="qr-machine-code" style="font-family:'Roboto Mono',monospace;font-size:13px;color:var(--muted);margin-bottom:16px;"></div>
+      <div id="qr-machine-code" style="font-family:&#39;Roboto Mono&#39;,monospace;font-size:13px;color:var(--muted);margin-bottom:16px;"></div>
       <div id="qr-canvas-wrap" style="display:flex;justify-content:center;margin-bottom:16px;"></div>
       <button class="btn btn-p" onclick="downloadQR()">Descargar QR</button>
     </div>
-    <div id="machines-admin" style="margin-top:20px;padding:14px;background:var(--s1);border:1px solid var(--border);border-radius:var(--r);display:none;">
-      <div style="font-size:11px;color:var(--muted);font-family:'Roboto Mono',monospace;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Admin — Actualizar lista de máquinas</div>
+    <div id="machines-admin" style="margin-top: 20px; padding: 14px; background: var(--s1); border: 1px solid var(--border); border-radius: var(--r); display: block;">
+      <div style="font-size:11px;color:var(--muted);font-family:&#39;Roboto Mono&#39;,monospace;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Admin — Actualizar lista de máquinas</div>
       <p style="font-size:12px;color:var(--muted);margin-bottom:10px;">Sube el Excel actualizado (columnas: TREE_ASSET_ID · IDENTIFICATIVE_CODE · COMMON NAME). Sobreescribe los datos actuales en Firebase.</p>
       <input type="file" id="machines-file" accept=".xlsx,.xls" style="font-size:13px;color:var(--text);background:var(--s2);border:1px solid var(--border);border-radius:var(--r-sm);padding:8px;width:100%;margin-bottom:8px;">
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
@@ -731,6 +1349,36 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
         </div>
 
         <div class="m-edit-field" style="margin-bottom:12px;">
+          <div class="m-lbl2">Requested by</div>
+          <select class="m-select" id="m-requested-by" onchange="markDirty()"><option value=""></option><option value="GoH Sortation">GoH Sortation</option><option value="FP Sortation">FP Sortation</option><option value="Area Manager">Area Manager</option><option value="Previous Shift">Previous Shift</option><option value="OSR Automatisista">OSR Automatisista</option></select>
+          <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+            <input id="m-requested-by-new" class="m-input" style="flex:1;min-width:120px;" placeholder="Añadir requester" oninput="">
+            <button class="btn btn-p" style="padding:8px 12px;min-width:fit-content;" onclick="addRequestedByOption()">Añadir</button>
+          </div>
+          <div id="m-requested-by-list" style="margin-top:8px;">
+      <span style="display:inline-flex;align-items:center;gap:6px;background:var(--s2);border:1px solid var(--border);border-radius:999px;padding:4px 8px;margin:2px;font-size:11px;">
+        GoH Sortation
+        <button type="button" onclick="removeRequestedByOption(" goh="" sortation")"="" style="border:none;background:none;color:var(--sick);cursor:pointer;font-size:12px;line-height:1;">✕</button>
+      </span>
+      <span style="display:inline-flex;align-items:center;gap:6px;background:var(--s2);border:1px solid var(--border);border-radius:999px;padding:4px 8px;margin:2px;font-size:11px;">
+        FP Sortation
+        <button type="button" onclick="removeRequestedByOption(" fp="" sortation")"="" style="border:none;background:none;color:var(--sick);cursor:pointer;font-size:12px;line-height:1;">✕</button>
+      </span>
+      <span style="display:inline-flex;align-items:center;gap:6px;background:var(--s2);border:1px solid var(--border);border-radius:999px;padding:4px 8px;margin:2px;font-size:11px;">
+        Area Manager
+        <button type="button" onclick="removeRequestedByOption(" area="" manager")"="" style="border:none;background:none;color:var(--sick);cursor:pointer;font-size:12px;line-height:1;">✕</button>
+      </span>
+      <span style="display:inline-flex;align-items:center;gap:6px;background:var(--s2);border:1px solid var(--border);border-radius:999px;padding:4px 8px;margin:2px;font-size:11px;">
+        Previous Shift
+        <button type="button" onclick="removeRequestedByOption(" previous="" shift")"="" style="border:none;background:none;color:var(--sick);cursor:pointer;font-size:12px;line-height:1;">✕</button>
+      </span>
+      <span style="display:inline-flex;align-items:center;gap:6px;background:var(--s2);border:1px solid var(--border);border-radius:999px;padding:4px 8px;margin:2px;font-size:11px;">
+        OSR Automatisista
+        <button type="button" onclick="removeRequestedByOption(" osr="" automatisista")"="" style="border:none;background:none;color:var(--sick);cursor:pointer;font-size:12px;line-height:1;">✕</button>
+      </span></div>
+        </div>
+
+        <div class="m-edit-field" style="margin-bottom:12px;">
           <div class="m-lbl2">Notas / Observaciones</div>
           <textarea class="m-input" id="m-edit-note" rows="2" placeholder="Observaciones adicionales..." oninput="markDirty()"></textarea>
         </div>
@@ -759,8 +1407,8 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="./index_files/xlsx.full.min.js.descarga"></script>
+<script src="./index_files/qrcode.min.js.descarga"></script>
 <script type="module">
 // ========== DATA ==========
 
@@ -784,29 +1432,8 @@ const TECHS = [
   {name:'Borja ruiz',     zone:'OSR', sub:'OSR'},
 ];
 
-const TASKS = [
-  {id:0,  woid:'35401',     title:'Cambiar correa dentada',                         techs:['Guillermo Garcia','Adrian B.'], status:'Done',        source:'',             note:'',                  zones:['FLEX']},
-  {id:1,  woid:'861010',    title:'Revisión máquina 861010',                         techs:['Iago C.'],                     status:'Done',        source:'',             note:'',                  zones:['FLEX']},
-  {id:2,  woid:'523',       title:'Perdiendo aceite — subida silo 3 (C32M1)',        techs:['Adrian B.','Guillermo Garcia'],status:'Done',        source:'Previous Shift',note:'',                 zones:['FLEX']},
-  {id:3,  woid:'51000',     title:'Chekear perfil curva alta',                       techs:['Jorge A.'],                    status:'Done',        source:'',             note:'',                  zones:['FLEX']},
-  {id:4,  woid:'108',       title:'Caljan — revisión',                               techs:['Borja S.'],                    status:'Done',        source:'',             note:'',                  zones:['FP']},
-  {id:5,  woid:'SQB07',     title:'SQB 07 conveyor',                                 techs:['Paula S.'],                    status:'Done',        source:'',             note:'',                  zones:['FP']},
-  {id:6,  woid:'17000',     title:'Revisión máquina 17000',                          techs:['Iago C.'],                     status:'Done',        source:'',             note:'',                  zones:['FLEX']},
-  {id:7,  woid:'PPM-PLC27', title:'PPM — PLC27 506000 & 507000 & 522000',           techs:['Marcos T.','Sergio Benavides'],status:'In Progress', source:'PLANNER',      note:'WO 5525369',        zones:['FLEX']},
-  {id:8,  woid:'208',       title:'Chain 208 — reparación de puntos',                techs:['Raul R.'],                     status:'In Progress', source:'PLANNER',      note:'WO 5664291',        zones:['FLEX']},
-  {id:9,  woid:'37406',     title:'Cambiar correa dentada',                          techs:['Guillermo Garcia','Adrian B.'],status:'In Progress', source:'',             note:'',                  zones:['FLEX']},
-  {id:10, woid:'FP-W17',    title:'FP Weekly alarm evaluation W17',                  techs:['Jorge A.'],                    status:'In Progress', source:'',             note:'',                  zones:['FP']},
-  {id:11, woid:'DOCK106',   title:'Dock 106 — intervención',                         techs:['Borja S.'],                    status:'In Progress', source:'',             note:'',                  zones:['FP']},
-  {id:12, woid:'PPM-CPU-B', title:'PPM — CPU_B IDs MODULE 2 Monthly pop-ups',        techs:['Sergio Cuco'],                 status:'In Progress', source:'PLANNER',      note:'',                  zones:['FP']},
-  {id:13, woid:'297000',    title:'Motor 297000 — seguimiento aceite',               techs:[],                              status:'Monitoring',  source:'',             note:'',                  zones:['GOH']},
-  {id:14, woid:'SHUT206',   title:'Shuttle 206 y 209 — WO pendiente',               techs:[],                              status:'Monitoring',  source:'',             note:'',                  zones:['GOH']},
-  {id:15, woid:'PPM-PLC02', title:'PPM — PLC 02 Semester+Bimonthly+Annual',         techs:[],                              status:'pending',     source:'PLANNER',      note:'',                  zones:['FP','GOH','FLEX']},
-  {id:16, woid:'AISLE5',    title:'Aisle 5 OSR — plan de trabajo 6M',               techs:[],                              status:'pending',     source:'PLANNER',      note:'',                  zones:['GOH','FLEX']},
-  {id:17, woid:'800058',    title:'Transfer bearing dañado — WO 5547487',            techs:[],                              status:'pending',     source:'PLANNER',      note:'Abnormal',          zones:['FLEX']},
-  {id:18, woid:'21000',     title:'Revisión máquina 21000',                          techs:[],                              status:'pending',     source:'',             note:'',                  zones:[]},
-  {id:19, woid:'FP-CONV',   title:'FP conveyor — no se mueve, nuevo módulo',        techs:[],                              status:'pending',     source:'',             note:'',                  zones:['FP']},
-  {id:20, woid:'208000',    title:'Revisión máquina 208000',                         techs:[],                              status:'pending',     source:'',             note:'Report next shift', zones:[]},
-];
+const TASKS = [];
+let currentUser = null; // {name, role: 'TL'|'Tech'}
 
 const SS_ZONES = {
   'GOH Silo': {color:'var(--goh)', techs:['Juan Suárez','Borisz M.']},
@@ -818,6 +1445,7 @@ const SS_ZONES = {
   'FP Area':   {color:'var(--fp)',  techs:['Borja S.','Paula S.','Sergio Cuco']},
   'OSR':       {color:'var(--osr)', techs:['Borja ruiz']},
   'Holidays / Sick': {color:'var(--dim)', techs:['Sebastian','Chema']},
+  'Trainer': {color:'var(--busy)', techs:[]},
 };
 
 const PLANNING = [
@@ -984,26 +1612,173 @@ function startRealtimeSync(){
 }
 
 function normalizeFirebaseTask(t){
+  const toISOString = value => {
+    if(!value) return '';
+    if(typeof value === 'string') return value;
+    if(value instanceof Date) return value.toISOString();
+    if(typeof value.toDate === 'function') return value.toDate().toISOString();
+    if(typeof value.seconds === 'number') return new Date(value.seconds * 1000 + (value.nanoseconds || 0) / 1e6).toISOString();
+    return '';
+  };
+
   return {
-    id:       t._fbId||t.id||'',
-    _fbId:    t._fbId||'',
-    woid:     t.woid||t._fbId||'',
-    title:    t.title||t.titulo||'',
-    techs:    Array.isArray(t.techs)?t.techs:(t.techs?t.techs.split(',').map(x=>x.trim()).filter(Boolean):[]),
-    status:   t.status||t.estado||'pending',
-    source:   t.source||t.origen||'',
-    note:     t.note||t.nota||'',
-    zones:    Array.isArray(t.zones)?t.zones:(t.zone?[t.zone]:[]),
-    prio:     (t.prio||t.prioridad||'media').toLowerCase(),
-    turno:    t.turno||'',
-    isNew:    false,
+    id:          t._fbId||t.id||'',
+    _fbId:       t._fbId||'',
+    woid:        t.woid||t._fbId||'',
+    title:       t.title||t.titulo||'',
+    techs:       Array.isArray(t.techs)?t.techs:(t.techs?t.techs.split(',').map(x=>x.trim()).filter(Boolean):[]),
+    status:      t.status||t.estado||'pending',
+    source:      t.source||t.origen||'',
+    note:        t.note||t.nota||'',
+    zones:       Array.isArray(t.zones)?t.zones:(t.zone?[t.zone]:[]),
+    prio:        (t.prio||t.prioridad||'media').toLowerCase(),
+    requestedBy: t.requestedBy||'',
+    turno:       t.turno||'',
+    createdAt:   toISOString(t.createdAt),
+    createdBy:   t.createdBy||t.creadoPor||'',
+    inProgressAt:toISOString(t.inProgressAt),
+    inProgressBy: t.inProgressBy||'',
+    doneAt:      toISOString(t.doneAt),
+    doneBy:      t.doneBy||'',
+    isNew:       false,
   };
 }
 
 let atFilter='all';
 let selectedTask=null;
+let selectedTaskDay = null;
 let newTaskZone='';
 let newTaskPrio='media';
+let requestedByOptions=[];
+const REQUESTED_BY_STORAGE_KEY='teamc_requestedByOptions';
+const PPM_ASSIGNMENTS_KEY='teamc_ppmAssigned';
+let ppmAssigned={};
+
+function formatDateKey(date){
+  const d = date instanceof Date ? date : new Date(date);
+  if(isNaN(d.getTime())) return '';
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function parseTaskDate(value){
+  if(!value) return null;
+  if(typeof value === 'string') return new Date(value);
+  if(value instanceof Date) return value;
+  if(typeof value.toDate === 'function') return value.toDate();
+  if(typeof value.seconds === 'number') return new Date(value.seconds * 1000 + (value.nanoseconds || 0) / 1e6);
+  return null;
+}
+
+function getTaskDayKey(task){
+  const created = parseTaskDate(task.createdAt);
+  if(!created) return '';
+  const day = new Date(created);
+  if(day.getHours() < 6){
+    day.setDate(day.getDate()-1);
+  }
+  return formatDateKey(day);
+}
+
+function getCurrentShiftDayKey(){
+  const now = new Date();
+  const day = new Date(now);
+  if(now.getHours() < 6){
+    day.setDate(day.getDate()-1);
+  }
+  return formatDateKey(day);
+}
+
+function setATDate(value){
+  if(!value){
+    selectedTaskDay = getCurrentShiftDayKey();
+  } else {
+    selectedTaskDay = value;
+  }
+  const input = document.getElementById('at-date');
+  if(input) input.value = selectedTaskDay;
+  renderAllTasks();
+}
+
+function loadPPMAssignments(){
+  const stored = localStorage.getItem(PPM_ASSIGNMENTS_KEY);
+  if(stored){
+    try{ ppmAssigned = JSON.parse(stored) || {}; }catch(e){ ppmAssigned = {}; }
+  }
+}
+
+function savePPMAssignments(){
+  localStorage.setItem(PPM_ASSIGNMENTS_KEY, JSON.stringify(ppmAssigned));
+}
+
+function isTechnician(name){
+  const tech = TECHS.find(t=>t.name===name);
+  return !!tech && (['FP','GOH','FLEX'].includes(tech.zone) || ['FP','GOH','FLEX'].includes(tech.sub));
+}
+
+function isPPMAssigned(name){
+  return !!ppmAssigned[name];
+}
+
+function togglePPMAssigned(name){
+  ppmAssigned[name] = !ppmAssigned[name];
+  savePPMAssignments();
+  renderSS();
+}
+
+function loadRequestedByOptions(){
+  const stored = localStorage.getItem(REQUESTED_BY_STORAGE_KEY);
+  if(stored){
+    try{ requestedByOptions = JSON.parse(stored) || []; }catch(e){ requestedByOptions=[]; }
+  }
+  if(!requestedByOptions.length){
+    requestedByOptions = ['GoH Sortation','FP Sortation','Area Manager','Previous Shift','OSR Automatisista'];
+  }
+  renderRequestedByOptions();
+}
+
+function saveRequestedByOptions(){
+  localStorage.setItem(REQUESTED_BY_STORAGE_KEY, JSON.stringify(requestedByOptions));
+}
+
+function renderRequestedByOptions(){
+  const select = document.getElementById('m-requested-by');
+  if(select){
+    select.innerHTML = `<option value=""></option>${requestedByOptions.map(o=>`<option value="${o}">${o}</option>`).join('')}`;
+  }
+  const list = document.getElementById('m-requested-by-list');
+  if(list){
+    list.innerHTML = requestedByOptions.map(o=>`
+      <span style="display:inline-flex;align-items:center;gap:6px;background:var(--s2);border:1px solid var(--border);border-radius:999px;padding:4px 8px;margin:2px;font-size:11px;">
+        ${o}
+        <button type="button" onclick="removeRequestedByOption(${JSON.stringify(o)})" style="border:none;background:none;color:var(--sick);cursor:pointer;font-size:12px;line-height:1;">✕</button>
+      </span>`).join('');
+  }
+}
+
+function addRequestedByOption(){
+  const input = document.getElementById('m-requested-by-new');
+  if(!input) return;
+  const value = input.value.trim();
+  if(!value) return;
+  if(!requestedByOptions.includes(value)){
+    requestedByOptions.push(value);
+    saveRequestedByOptions();
+    renderRequestedByOptions();
+  }
+  input.value='';
+  const select = document.getElementById('m-requested-by');
+  if(select){ select.value = value; markDirty(); }
+}
+
+function removeRequestedByOption(value){
+  requestedByOptions = requestedByOptions.filter(o=>o!==value);
+  saveRequestedByOptions();
+  renderRequestedByOptions();
+}
+
+loadRequestedByOptions();
+loadPPMAssignments();
+
 let nextId=100;
 const statusOrder=['pending','Monitoring','In Progress','Done'];
 
@@ -1057,6 +1832,7 @@ function openNewTask(zone){
     note:'',
     zones:zone?[zone]:[],
     prio:'media',
+    requestedBy: zone==='GOH' ? 'GoH Sortation' : zone==='FP' ? 'FP Sortation' : '',
     isNew:true,
     turno:'',
   };
@@ -1067,6 +1843,8 @@ function openNewTask(zone){
   document.getElementById('m-edit-note').value='';
   document.getElementById('m-edit-zona').value=zone||'';
   document.getElementById('m-edit-prio').value='media';
+  renderRequestedByOptions();
+  document.getElementById('m-requested-by').value=selectedTask.requestedBy||'';
   const sg=document.getElementById('m-status-grid');
   sg.innerHTML=ALL_STATUSES.map(s=>`
     <button class="status-opt ${s.key==='pending'?s.cls:''}"
@@ -1089,6 +1867,7 @@ async function toggleAssign(name){
   const zonaVal=document.getElementById('m-edit-zona').value;
   selectedTask.zones=zonaVal?[zonaVal]:[];
   selectedTask.prio=document.getElementById('m-edit-prio').value;
+  selectedTask.requestedBy=document.getElementById('m-requested-by')?.value.trim()||'';
 
   const idx=selectedTask.techs.indexOf(name);
   if(idx>=0) selectedTask.techs.splice(idx,1);
@@ -1153,8 +1932,9 @@ async function initApp(){
 
   setLoading('Conectando con Firebase...');
   try{
-    // Load PINs first — needed for login
+    // Load PINs and zone options — needed for login and planning
     await loadPINs();
+    await loadZoneOptions();
     if(!currentUser){
       // Show login is ready
       const err=document.getElementById('login-err');
@@ -1267,18 +2047,28 @@ function renderAreaTasks(areaZone, containerId){
       const h=Math.floor(ms/3600000), m=Math.floor((ms%3600000)/60000);
       return h>0?h+'h '+m+'m':m+'m';
     }
+    function fmtTime(value){
+      if(!value) return '';
+      const d = typeof value === 'string' ? new Date(value) : (value instanceof Date ? value : (typeof value.toDate === 'function' ? value.toDate() : new Date(value.seconds * 1000 + (value.nanoseconds || 0) / 1e6)));
+      if(isNaN(d.getTime())) return '';
+      return d.toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit'}) + ' ' + d.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+    }
     const age=fmtDur(t.createdAt);
+    const createdTime=fmtTime(t.createdAt);
     const ipDur=t.inProgressAt?fmtDur(t.inProgressAt, t.doneAt||null):'';
+    const requester = t.requestedBy||'';
+    const rowLabel = createdTime || '';
+    const requesterLabel = requester?`<span style="font-size:11px;color:var(--muted);margin-left:8px">${requester}</span>`:'';
 
     return `<div class="task-card" style="position:relative;" onclick="isTL()&&openModal('${t.id}')">
       <span onclick="event.stopPropagation();quickDelete('${t.id}')" style="position:absolute;top:6px;right:7px;font-size:11px;color:var(--dim);cursor:pointer;line-height:1;padding:2px 4px;" title="Eliminar">✕</span>
-      <div class="task-woid">
-        #${t.woid} ${src}
-        ${age?`<span style="color:var(--dim);font-size:10px;">${age}</span>`:''}
-        ${ipDur?`<span style="color:var(--busy);font-size:10px;margin-left:4px;">⏱${ipDur}</span>`:''}
-      </div>
+      <div class="task-woid">${rowLabel} ${src}${age?`<span class="task-time">${age}</span>`:''}${requesterLabel}</div>
       <div class="task-title">${t.title||'<em style="color:var(--muted)">Sin descripción</em>'}</div>
-      <div class="task-foot">${techs} ${stTag(t.status)}</div>
+      <div class="task-foot">
+        ${techs}
+        ${stTag(t.status)}
+        ${ipDur?`<span class="task-time ip">⏱${ipDur}</span>`:''}
+      </div>
       ${note}
     </div>`;
   }).join('');
@@ -1287,18 +2077,59 @@ function renderAreaTasks(areaZone, containerId){
 function renderAllTasks(){
   const q = document.getElementById('at-search').value.toLowerCase();
   const tasks = TASKS.filter(t=>{
+    const taskDay = getTaskDayKey(t);
+    const dayMatch = !selectedTaskDay || taskDay===selectedTaskDay;
     const mq = !q||(t.woid+t.title+t.techs.join(' ')).toLowerCase().includes(q);
     const mf = atFilter==='all'||t.status===atFilter||(atFilter==='PLANNER'&&t.source==='PLANNER');
-    return mq&&mf;
+    return dayMatch && mq && mf;
   });
+  if(!selectedTaskDay){
+    selectedTaskDay = getCurrentShiftDayKey();
+  }
+  const dateInput = document.getElementById('at-date');
+  if(dateInput) dateInput.value = selectedTaskDay;
   document.getElementById('at-list').innerHTML = tasks.length
     ? tasks.map(t=>{
         const techs = t.techs.length ? t.techs.map(x=>`<span class="tech-chip">${x}</span>`).join('') : '<span style="font-size:10px;color:var(--dim)">—</span>';
         const zones = t.zones.length ? t.zones.join(', ') : '—';
+
+        const fmtTime = value => {
+          if(!value) return '';
+          let d;
+          if(typeof value === 'string') d = new Date(value);
+          else if(value instanceof Date) d = value;
+          else if(typeof value.toDate === 'function') d = value.toDate();
+          else if(typeof value.seconds === 'number') d = new Date(value.seconds * 1000 + (value.nanoseconds || 0) / 1e6);
+          else return '';
+          if(isNaN(d.getTime())) return '';
+          return d.toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit'}) + ' ' + d.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+        };
+
+        const fmtDur = (iso1, iso2) => {
+          if(!iso1) return '';
+          const start = typeof iso1 === 'string' ? new Date(iso1) : (iso1 instanceof Date ? iso1 : (typeof iso1.toDate === 'function' ? iso1.toDate() : new Date(iso1.seconds * 1000 + (iso1.nanoseconds || 0) / 1e6)));
+          const end = iso2 ? (typeof iso2 === 'string' ? new Date(iso2) : (iso2 instanceof Date ? iso2 : (typeof iso2.toDate === 'function' ? iso2.toDate() : new Date(iso2.seconds * 1000 + (iso2.nanoseconds || 0) / 1e6)))) : new Date();
+          const ms = end.getTime() - start.getTime();
+          if(ms < 0) return '';
+          const h = Math.floor(ms / 3600000);
+          const m = Math.floor((ms % 3600000) / 60000);
+          return h > 0 ? `${h}h ${m}m` : `${m}m`;
+        };
+
+        const createdTime = fmtTime(t.createdAt);
+        const doneTime = fmtTime(t.doneAt);
+        const ipDur = t.inProgressAt ? fmtDur(t.inProgressAt, t.doneAt || null) : '';
+        const meta = [doneTime ? `Terminada ${doneTime}` : '', ipDur ? `⏱ ${ipDur}` : ''].filter(Boolean).join(' · ');
+        const rowLabel = createdTime || '—';
+        const requesterChip = t.requestedBy ? `<span style="font-size:11px;color:var(--muted);padding:3px 8px;border-radius:999px;border:1px solid var(--border);background:rgba(255,255,255,.04);white-space:nowrap;">${t.requestedBy}</span>` : '';
+
         return `<div class="at-row" style="position:relative;" onclick="isTL()&&openModal('${t.id}')">
-          <div class="at-woid">#${t.woid}</div>
-          <div class="at-title">${t.title||'<em style="color:var(--muted)">Sin descripción</em>'} <span style="font-size:11px;color:var(--muted)">[${zones}]</span></div>
-          <div class="at-techs">${techs}</div>
+          <div class="at-woid">${rowLabel}</div>
+          <div style="flex:1;min-width:0;">
+            <div class="at-title">${t.title||'<em style="color:var(--muted)">Sin descripción</em>'} <span style="font-size:11px;color:var(--muted)">[${zones}]</span></div>
+            ${meta?`<div style="font-size:11px;color:var(--muted);margin-top:4px;">${meta}</div>`:''}
+          </div>
+          <div class="at-techs">${techs}${requesterChip}</div>
           <div class="at-status">${stTag(t.status)}</div>
           <span onclick="event.stopPropagation();quickDelete('${t.id}')" style="margin-left:8px;font-size:12px;color:var(--dim);cursor:pointer;padding:2px 6px;flex-shrink:0;" title="Eliminar">✕</span>
         </div>`;
@@ -1337,44 +2168,32 @@ function quickDelete(id){
 }
 
 function renderSS(){
-  const zones=[
-    {name:'TL',        color:'var(--tl)',   techs:SS_ZONES['TL'].techs},
-    {name:'SP / FLOW', color:'var(--osr)',  techs:SS_ZONES['SP / FLOW'].techs},
-    {name:'FLEX',      color:'var(--flex)', techs:SS_ZONES['FLEX'].techs},
-    {name:'FP Area',   color:'var(--fp)',   techs:SS_ZONES['FP Area'].techs},
-    {name:'GOH Area',  color:'var(--goh)',  techs:SS_ZONES['GOH Area'].techs},
-    {name:'GOH Silo',  color:'var(--goh)',  techs:SS_ZONES['GOH Silo'].techs},
-    {name:'FP Silo',   color:'var(--fp)',   techs:SS_ZONES['FP Silo'].techs},
-    {name:'OSR',       color:'var(--osr)',  techs:SS_ZONES['OSR'].techs},
-    {name:'Hols / Sick',color:'var(--dim)',techs:SS_ZONES['Holidays / Sick'].techs},
-  ];
 
-  // Counters — exclude Holidays/Sick
-  const sick=SS_ZONES['Holidays / Sick'].techs;
+  const sick = SS_ZONES['Holidays / Sick'].techs;
   function notSick(name){ return !sick.includes(name); }
 
-  const gohMT=SS_ZONES['GOH Area'].techs.filter(notSick).length;
-  const fpMT=SS_ZONES['FP Area'].techs.filter(notSick).length;
-  const flexT=SS_ZONES['FLEX'].techs.filter(notSick).length;
-  const mechT=gohMT+fpMT+flexT;
-  const tlT=SS_ZONES['TL'].techs.filter(notSick).length;
-  const paFP=SS_ZONES['FP Silo'].techs.filter(notSick).length;
-  const paGOH=SS_ZONES['GOH Silo'].techs.filter(notSick).length;
-  const paOSR=SS_ZONES['OSR'].techs.filter(notSick).length;
-  const paSP=SS_ZONES['SP / FLOW'].techs.filter(notSick).length;
-  const paT=paFP+paGOH+paOSR+paSP;
-  const sickT=sick.length;
-  const total=tlT+mechT+paT;
+  const gohMT = SS_ZONES['GOH Area'].techs.filter(notSick).length;
+  const fpMT = SS_ZONES['FP Area'].techs.filter(notSick).length;
+  const flexT = SS_ZONES['FLEX'].techs.filter(notSick).length;
+  const mechT = gohMT + fpMT + flexT;
+  const tlT = SS_ZONES['TL'].techs.filter(notSick).length;
+  const paFP = SS_ZONES['FP Silo'].techs.filter(notSick).length;
+  const paGOH = SS_ZONES['GOH Silo'].techs.filter(notSick).length;
+  const paOSR = SS_ZONES['OSR'].techs.filter(notSick).length;
+  const paSP = SS_ZONES['SP / FLOW'].techs.filter(notSick).length;
+  const paT = paFP + paGOH + paOSR + paSP;
+  const trainerT = SS_ZONES['Trainer'].techs.filter(notSick).length;
+  const sickT = sick.length;
+  const total = tlT + mechT + paT + trainerT;
 
-  // 5/2 planned works counter (Team 1/2 in today52)
-  const pw52=today52.filter(e=>e.isLV);
-  const pw52MT=pw52.filter(e=>{
-    const w=WORKERS.find(w=>w.name===e.fullName);
-    return !w||(w.location!=='Production Assistant'&&w.location!=='Prod. Assistant');
+  const pw52 = today52.filter(e=>e.isLV);
+  const pw52MT = pw52.filter(e=>{
+    const w = WORKERS.find(w=>w.name===e.fullName);
+    return !w || (w.location!=='Production Assistant' && w.location!=='Prod. Assistant');
   }).length;
-  const pw52PA=pw52.filter(e=>{
-    const w=WORKERS.find(w=>w.name===e.fullName);
-    return w&&(w.location==='Production Assistant'||w.location==='Prod. Assistant');
+  const pw52PA = pw52.filter(e=>{
+    const w = WORKERS.find(w=>w.name===e.fullName);
+    return w && (w.location==='Production Assistant' || w.location==='Prod. Assistant');
   }).length;
 
   document.getElementById('ss-totals').innerHTML=`
@@ -1388,6 +2207,7 @@ function renderSS(){
     <div class="ss-chip" style="border-color:var(--osr)"><span class="ss-chip-num" style="color:var(--osr)">${paT}</span> PA
       <span style="font-size:11px;color:var(--dim);">(FP ${paFP} · GOH ${paGOH} · OSR ${paOSR} · SP ${paSP})</span>
     </div>
+    ${trainerT?`<div class="ss-chip" style="border-color:var(--busy)"><span class="ss-chip-num" style="color:var(--busy)">${trainerT}</span> Trainer</div>`:''}
     ${pw52.length?`<div class="ss-chip" style="border-color:var(--muted)">
       <span style="font-size:10px;font-family:'Roboto Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;">Planned Works L-V</span>
       <span class="ss-chip-num" style="color:var(--muted);font-size:16px;">${pw52.length}</span>
@@ -1395,23 +2215,37 @@ function renderSS(){
     </div>`:''}
   `;
 
-  const tableRows=zones.map(z=>{
-    if(!z.techs.length) return '';
-    return z.techs.map((name,i)=>`
-      <tr class="ss-tr">
-        ${i===0?`<td class="ss-zone-cell" rowspan="${z.techs.length}" style="color:${z.color};border-left:3px solid ${z.color};">${z.name}</td>`:''}
-        <td class="ss-name-cell">${name}</td>
-      </tr>`).join('');
+  const ZONE_DEFS = [
+    {label:'GOH Area',  key:'GOH Area',  color:'var(--goh)',  showPPM:true},
+    {label:'FP Area',   key:'FP Area',   color:'var(--fp)',   showPPM:true},
+    {label:'FLEX',      key:'FLEX',      color:'var(--flex)', showPPM:true},
+    {label:'GOH Silo',  key:'GOH Silo',  color:'var(--goh)',  showPPM:false},
+    {label:'FP Silo',   key:'FP Silo',   color:'var(--fp)',   showPPM:false},
+    {label:'TL',        key:'TL',        color:'var(--tl)',   showPPM:false},
+    {label:'OSR',       key:'OSR',       color:'var(--osr)',  showPPM:false},
+    {label:'SP + FLOW', key:'SP / FLOW', color:'var(--osr)',  showPPM:false},
+    {label:'Trainer',   key:'Trainer',   color:'var(--busy)', showPPM:false},
+  ];
+  const cards = ZONE_DEFS.map(z=>{
+    const techs = SS_ZONES[z.key]?.techs||[];
+    const techRows = techs.map(name=>{
+      const checkbox = z.showPPM && isTechnician(name)
+        ? `<label class="ss-ppm-label"><input type="checkbox" class="ss-ppm-checkbox" ${isPPMAssigned(name)?'checked':''} onclick="event.stopPropagation();togglePPMAssigned(${JSON.stringify(name)})">PPM</label>`
+        : '';
+      return `<div class="ss-tech"><span style="display:flex;align-items:center;gap:6px;min-width:0;"><span class="ss-dot" style="background:${z.color};flex-shrink:0;"></span>${name}</span>${checkbox}</div>`;
+    }).join('');
+    return `<div class="ss-zone">
+      <div class="ss-zone-head">
+        <span class="ss-zone-label" style="color:${z.color}">${z.label}</span>
+        <span class="ss-zone-count">${techs.length}</span>
+      </div>
+      <div class="ss-tech-list">${techRows||'<span style="font-size:12px;color:var(--dim);">—</span>'}</div>
+    </div>`;
   }).join('');
-
   document.getElementById('ss-table-wrap').innerHTML=`
-    <table class="ss-table">
-      <thead><tr>
-        <th style="width:160px;">Zona</th>
-        <th>Técnico</th>
-      </tr></thead>
-      <tbody>${tableRows}</tbody>
-    </table>`;
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;">
+      ${cards}
+    </div>`;
 
   document.getElementById('checklist').innerHTML=CHECKLIST_ITEMS.map((item,i)=>`
     <div class="check-item" id="ci-${i}">
@@ -1752,8 +2586,8 @@ function applyPasteMorning(){
     }
   });
 
-  // Clear tasks except Reminder and Report Next Shift
-  const keepStatuses=['Reminder','Report Next Shift'];
+  // Keep completed tasks and shared reminders, remove only open tasks from the previous day
+  const keepStatuses=['Done','Reminder','Report Next Shift'];
   for(let i=TASKS.length-1;i>=0;i--){
     if(!keepStatuses.includes(TASKS[i].status)) TASKS.splice(i,1);
   }
@@ -1819,6 +2653,7 @@ function updateSSFromToday(){
     'S GOH':'GOH Silo', 'S FP':'FP Silo', 'OSR':'OSR',
     'TL':'TL', 'FLOW':'SP / FLOW', 'SP':'SP / FLOW',
     'SICK':'Holidays / Sick', 'H':'Holidays / Sick',
+    'TRAINER':'Trainer',
   };
 
   // 1. Add each person in todayData (fixed staff)
@@ -1846,25 +2681,133 @@ function updateSSFromToday(){
   });
 }
 
+// ========== ZONE OPTIONS MANAGEMENT ==========
+const ZONE_FIXED = ['SICK','H','—']; // these cannot be removed
+
+function openZoneEditor(){
+  const panel=document.getElementById('zone-editor-panel');
+  const btn=document.getElementById('btn-zone-editor');
+  panel.style.display='block';
+  if(btn) btn.textContent='Zonas ▴';
+  renderZoneOptions();
+  panel.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function toggleZoneEditor(){
+  const panel=document.getElementById('zone-editor-panel');
+  const open=panel.style.display==='none';
+  if(open) openZoneEditor();
+  else{
+    panel.style.display='none';
+    const btn=document.getElementById('btn-zone-editor');
+    if(btn) btn.textContent='Zonas ▾';
+  }
+}
+
+async function loadZoneOptions(){
+  try{
+    const snap=await getDocs(collection(db,'configs'));
+    snap.forEach(d=>{
+      if(d.id==='zoneOptions'&&Array.isArray(d.data().zoneOptions)&&d.data().zoneOptions.length>0){
+        ZONE_OPTIONS=d.data().zoneOptions;
+      }
+    });
+  }catch(e){ console.warn('Could not load zone options:',e); }
+  renderZoneOptions();
+}
+
+async function saveZoneOptions(){
+  try{ await setDoc(doc(db,'configs','zoneOptions'),{zoneOptions:ZONE_OPTIONS}); }
+  catch(e){ console.warn('Failed to save zone options:',e); }
+}
+
+function renderZoneOptions(){
+  const list=document.getElementById('zone-options-list');
+  if(!list) return;
+  list.innerHTML=ZONE_OPTIONS.map(z=>`
+    <span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px 3px 12px;border-radius:20px;background:var(--s2);border:1px solid var(--border);font-size:12px;font-family:'Roboto Mono',monospace;">
+      ${z}
+      ${!ZONE_FIXED.includes(z)
+        ?`<span onclick="removeZoneOption(${JSON.stringify(z)})" style="cursor:pointer;color:var(--dim);font-size:15px;line-height:1;margin-left:2px;" title="Eliminar">×</span>`
+        :`<span style="font-size:10px;color:var(--dim);margin-left:2px;" title="Sistema">🔒</span>`}
+    </span>`).join('');
+}
+
+async function addInlineZone(){
+  const inp=document.getElementById('inline-zone-inp');
+  if(!inp) return;
+  const val=inp.value.trim().toUpperCase();
+  if(!val||ZONE_OPTIONS.includes(val)){inp.value='';inp.focus();return;}
+  const fixedStart=ZONE_OPTIONS.findIndex(z=>ZONE_FIXED.includes(z));
+  if(fixedStart===-1) ZONE_OPTIONS.push(val);
+  else ZONE_OPTIONS.splice(fixedStart,0,val);
+  await saveZoneOptions();
+  if(_zoneMenuCtx?.rebuild) _zoneMenuCtx.rebuild();
+  setTimeout(()=>{const i=document.getElementById('inline-zone-inp');if(i){i.value='';i.focus();}},30);
+}
+
+async function addZoneOption(){
+  const inp=document.getElementById('new-zone-input');
+  const val=inp.value.trim().toUpperCase();
+  if(!val) return;
+  if(ZONE_OPTIONS.includes(val)){ inp.value=''; inp.focus(); return; }
+  // Insert before fixed system zones at the end
+  const fixedStart=ZONE_OPTIONS.findIndex(z=>ZONE_FIXED.includes(z));
+  if(fixedStart===-1) ZONE_OPTIONS.push(val);
+  else ZONE_OPTIONS.splice(fixedStart,0,val);
+  inp.value='';
+  inp.focus();
+  renderZoneOptions();
+  await saveZoneOptions();
+}
+
+async function removeZoneOption(zone){
+  if(ZONE_FIXED.includes(zone)) return;
+  if(!confirm(`¿Eliminar la zona/rol "${zone}"?`)) return;
+  ZONE_OPTIONS=ZONE_OPTIONS.filter(z=>z!==zone);
+  renderZoneOptions();
+  await saveZoneOptions();
+}
+
 // ========== PLANNING EDIT ==========
-const ZONE_OPTIONS=['FP','GOH','FLEX','OSR','TL','FLOW','SP','S FP','S GOH','SICK','H','—'];
+let ZONE_OPTIONS=['FP','GOH','FLEX','OSR','TL','FLOW','SP','S FP','S GOH','SICK','H','—'];
 let openCellEl=null;
 
 function closeCellEdit(){
   if(openCellEl){openCellEl.querySelector('.cell-edit')?.remove();openCellEl=null;}
 }
 
+let _zoneMenuCtx = null;
+
+function _zoneAddRow(){
+  return `<div style="border-top:1px solid var(--border);margin-top:4px;padding:5px 6px 3px;">
+    <div style="display:flex;gap:4px;">
+      <input id="inline-zone-inp" placeholder="Nueva zona..."
+        style="flex:1;min-width:0;background:var(--s2);border:1px solid var(--border);border-radius:3px;padding:4px 7px;font-size:11px;color:var(--text);font-family:'Roboto Mono',monospace;outline:none;"
+        onclick="event.stopPropagation()"
+        onkeydown="event.stopPropagation();if(event.key==='Enter')addInlineZone()">
+      <button onclick="event.stopPropagation();addInlineZone()"
+        style="background:transparent;border:1px solid var(--flex);border-radius:3px;padding:3px 10px;color:var(--flex);cursor:pointer;font-size:13px;flex-shrink:0;">+</button>
+    </div>
+  </div>`;
+}
+
 function editCell(td, pi, di){
   if(!isTL()) return;
   closeCellEdit();
   openCellEl=td;
-  const cur=PLANNING[pi].days[di];
-  const menu=document.createElement('div');
-  menu.className='cell-edit';
-  menu.innerHTML=ZONE_OPTIONS.map(o=>
-    `<div class="cell-opt ${o===cur?'':''}${o===cur?'style="color:var(--flex)"':''}" onclick="setCellVal(${pi},${di},'${o}')">${o==='—'?'— (vacío)':o}</div>`
-  ).join('');
-  td.appendChild(menu);
+  function build(){
+    td.querySelector('.cell-edit')?.remove();
+    const cur=PLANNING[pi].days[di];
+    const menu=document.createElement('div');
+    menu.className='cell-edit';
+    menu.innerHTML=ZONE_OPTIONS.map(o=>
+      `<div class="cell-opt" style="${o===cur?'color:var(--flex);':''}" onclick="setCellVal(${pi},${di},'${o}')">${o==='—'?'— (vacío)':o}</div>`
+    ).join('')+_zoneAddRow();
+    td.appendChild(menu);
+  }
+  _zoneMenuCtx={rebuild:build};
+  build();
   document.addEventListener('click', outsideClose, {once:true, capture:true});
 }
 
@@ -1880,9 +2823,45 @@ function setCellVal(pi,di,val){
   PLANNING[pi].days.forEach(d=>{if(d!=='H'&&d!=='SICK'&&d!=='—')freq[d]=(freq[d]||0)+1;});
   const top=Object.entries(freq).sort((a,b)=>b[1]-a[1])[0];
   if(top) PLANNING[pi].zone=top[0];
+  // If changing today's column, sync todayData so Shift Start reflects it
+  if(pasteApplied && window._activeColIdx!=null && di===window._activeColIdx){
+    const name=PLANNING[pi].name;
+    if(todayData[name]) todayData[name].zone=val;
+  }
   closeCellEdit();
   if(pasteApplied){ updateSSFromToday(); renderSS(); }
   renderMP();
+}
+
+function editTodayZone(el, name){
+  if(!isTL()) return;
+  closeCellEdit();
+  openCellEl=el;
+  const cur=todayData[name]?.zone||'';
+  function build(){
+    el.querySelector('.cell-edit')?.remove();
+    const menu=document.createElement('div');
+    menu.className='cell-edit';
+    const safeName=name.replace(/'/g,"\\'");
+    menu.innerHTML=ZONE_OPTIONS.map(o=>
+      `<div class="cell-opt" style="${o===cur?'color:var(--flex);':''}" onclick="setTodayZone('${safeName}','${o}')">${o==='—'?'— (vacío)':o}</div>`
+    ).join('')+_zoneAddRow();
+    el.appendChild(menu);
+  }
+  _zoneMenuCtx={rebuild:build};
+  build();
+  document.addEventListener('click',outsideClose,{once:true,capture:true});
+}
+
+function setTodayZone(name, val){
+  if(!isTL()) return;
+  if(!todayData[name]) return;
+  todayData[name].zone=val==='—'?'':val;
+  closeCellEdit();
+  updateSSFromToday();
+  renderSS();
+  renderMP();
+  fbSaveShiftState();
 }
 
 function editName(td, pi){
@@ -1939,7 +2918,15 @@ function render52Row(e,i){
     let hoyCell='<span style="color:var(--dim);font-size:11px;">—</span>';
     if(pasteApplied){
       if(td){
-        hoyCell=`<span class="hoy-pill hoy-present">${td.shift==='H'?'HOL':td.shift==='SICK'?'SICK':'En turno'}</span>`;
+        if(td.shift==='H'||td.shift==='SICK'){
+          hoyCell=`<span class="hoy-pill hoy-absent">${td.shift==='H'?'HOL':'SICK'}</span>`;
+        } else {
+          const zone=td.zone||'';
+          hoyCell=`<div class="hoy-zone-wrap" onclick="editTodayZone(this,${JSON.stringify(p.name)})">
+            ${zone?`<span class="pill ${pillClass(zone)}">${zone}</span>`:`<span style="font-size:12px;color:var(--dim);">sin zona</span>`}
+            <span style="font-size:10px;color:var(--dim);">✎</span>
+          </div>`;
+        }
       } else {
         hoyCell=`<span class="hoy-pill hoy-absent">Ausente</span>`;
       }
@@ -2199,6 +3186,8 @@ function openModal(id){
   document.getElementById('m-edit-note').value=t.note||'';
   document.getElementById('m-edit-zona').value=(t.zones&&t.zones[0])||'';
   document.getElementById('m-edit-prio').value=t.prio||'media';
+  renderRequestedByOptions();
+  document.getElementById('m-requested-by').value=t.requestedBy||'';
 
   // Status grid
   const sg=document.getElementById('m-status-grid');
@@ -2337,13 +3326,19 @@ function selectStatus(key, el, cls){
   const prev=selectedTask.status;
   selectedTask.status=key;
 
-  // Track In Progress start/end times
-  if(key==='In Progress'&&prev!=='In Progress'){
-    selectedTask.inProgressAt=nowISO();
-    selectedTask.inProgressBy=currentUser?.name||'TL';
-  }
-  if(prev==='In Progress'&&key!=='In Progress'&&selectedTask.inProgressAt){
-    selectedTask.doneAt=nowISO();
+  if(key==='In Progress'){
+    if(prev!=='In Progress'){
+      selectedTask.inProgressAt=selectedTask.inProgressAt||nowISO();
+      selectedTask.inProgressBy=selectedTask.inProgressBy||currentUser?.name||'TL';
+    }
+    selectedTask.doneAt=null;
+    selectedTask.doneBy='';
+  } else if(key==='Done'){
+    selectedTask.doneAt=selectedTask.doneAt||nowISO();
+    selectedTask.doneBy=currentUser?.name||'TL';
+  } else {
+    selectedTask.doneAt=null;
+    selectedTask.doneBy='';
   }
 
   document.querySelectorAll('.status-opt').forEach(b=>{
@@ -2369,19 +3364,25 @@ function removeTech(name){
 async function saveTaskEdits(){
   if(!isTL()) return;
   if(!selectedTask)return;
+  const task=selectedTask; // Keep reference to prevent null race condition
   const titleVal=document.getElementById('m-edit-title').value.trim();
-  if(titleVal) selectedTask.title=titleVal;
-  selectedTask.note=document.getElementById('m-edit-note').value.trim();
+  if(titleVal) task.title=titleVal;
+  task.note=document.getElementById('m-edit-note').value.trim();
   const zonaVal=document.getElementById('m-edit-zona').value;
-  selectedTask.zones=zonaVal?[zonaVal]:[];
-  selectedTask.prio=document.getElementById('m-edit-prio').value;
+  task.zones=zonaVal?[zonaVal]:[];
+  task.prio=document.getElementById('m-edit-prio').value;
+  task.requestedBy=document.getElementById('m-requested-by')?.value.trim()||'';
+  if(!task.requestedBy){
+    if(task.zones[0]==='GOH') task.requestedBy='GoH Sortation';
+    else if(task.zones[0]==='FP') task.requestedBy='FP Sortation';
+  }
 
   isDirty=false;
   document.getElementById('btn-save-task').style.display='none';
   renderTasksView();
 
-  const taskId=selectedTask.id;
-  const isNew=selectedTask.isNew;
+  const taskId=task.id;
+  const isNew=task.isNew;
   const turno=document.querySelector('.shift-sel').value.split('·')[1]?.trim().split(' ')[0]||'Morning';
   const now=new Date();
   const pad=n=>String(n).padStart(2,'0');
@@ -2392,14 +3393,15 @@ async function saveTaskEdits(){
     if(isNew){
       // Create in Firebase
       const fbData={
-        title:      selectedTask.title,
-        note:       selectedTask.note,
-        zone:       selectedTask.zones[0]||'',
-        zones:      selectedTask.zones,
-        prio:       selectedTask.prio,
-        status:     selectedTask.status,
-        techs:      selectedTask.techs,
-        source:     selectedTask.source||'',
+        title:      task.title,
+        note:       task.note,
+        zone:       task.zones[0]||'',
+        zones:      task.zones,
+        prio:       task.prio,
+        status:     task.status,
+        techs:      task.techs,
+        requestedBy: task.requestedBy||'',
+        source:     task.source||'',
         turno,
         woid:       'NEW',
         fecha,
@@ -2407,33 +3409,40 @@ async function saveTaskEdits(){
         createdBy:  currentUser?.name||'TL',
       };
       const fbId=await fbAddTask(fbData);
-      selectedTask._fbId=fbId;
-      selectedTask.id=fbId;
-      selectedTask.woid=fbId.slice(-6).toUpperCase();
-      selectedTask.isNew=false;
+      task._fbId=fbId;
+      task.id=fbId;
+      task.woid=fbId.slice(-6).toUpperCase();
+      task.isNew=false;
       const woidEl=document.getElementById('m-woid');
-      if(woidEl) woidEl.textContent='#'+selectedTask.woid;
+      if(woidEl) woidEl.textContent='#'+task.woid;
     } else {
       // Update in Firebase
-      const fbId=selectedTask._fbId||selectedTask.id;
+      const fbId=task._fbId||task.id;
       if(fbId&&!fbId.startsWith('LOCAL')){
         const updateData={
-          title:   selectedTask.title,
-          note:    selectedTask.note,
-          zone:    selectedTask.zones[0]||'',
-          zones:   selectedTask.zones,
-          prio:    selectedTask.prio,
-          status:  selectedTask.status,
-          techs:   selectedTask.techs,
+          title:   task.title,
+          note:    task.note,
+          zone:    task.zones[0]||'',
+          zones:   task.zones,
+          prio:    task.prio,
+          status:  task.status,
+          techs:   task.techs,
+          requestedBy: task.requestedBy||'',
           turno,
         };
+        if(task.createdAt) updateData.createdAt=task.createdAt;
+        if(task.createdBy) updateData.createdBy=task.createdBy;
+        if(task.inProgressAt!==undefined) updateData.inProgressAt=task.inProgressAt||null;
+        if(task.inProgressBy!==undefined) updateData.inProgressBy=task.inProgressBy||'';
+        if(task.doneAt!==undefined) updateData.doneAt=task.doneAt||null;
+        if(task.doneBy!==undefined) updateData.doneBy=task.doneBy||'';
         await fbUpdateTask(fbId, updateData);
         // Write history
         await fbAddHistory({
           taskId:   fbId,
-          title:    selectedTask.title,
-          status:   selectedTask.status,
-          techs:    selectedTask.techs,
+          title:    task.title,
+          status:   task.status,
+          techs:    task.techs,
           turno,
           cambiadoPor:'TL',
         });
@@ -2644,7 +3653,6 @@ window.saveNewWorker=saveNewWorker;
 window.deleteWorker=deleteWorker;
 
 // ========== AUTH ==========
-let currentUser = null; // {name, role: 'TL'|'Tech'}
 let selectedRole = null;
 const TL_PIN = '';   // Must be set in Firebase configs/pins
 const TECH_PIN = ''; // Must be set in Firebase configs/pins
@@ -3020,6 +4028,8 @@ window.openNewTask=openNewTask;
 window.goTab=goTab;
 window.openModal=openModal;
 window.closeModal=closeModal;
+window.addRequestedByOption=addRequestedByOption;
+window.removeRequestedByOption=removeRequestedByOption;
 window.quickDelete=quickDelete;
 window.deleteTask=deleteTask;
 window.saveTaskEdits=saveTaskEdits;
@@ -3039,10 +4049,18 @@ window.toggleCheck=toggleCheck;
 window.editCell=editCell;
 window.editName=editName;
 window.setCellVal=setCellVal;
+window.editTodayZone=editTodayZone;
+window.setTodayZone=setTodayZone;
+window.addZoneOption=addZoneOption;
+window.addInlineZone=addInlineZone;
+window.removeZoneOption=removeZoneOption;
+window.toggleZoneEditor=toggleZoneEditor;
+window.openZoneEditor=openZoneEditor;
 window.selZone=selZone;
 window.selPrio=selPrio;
 window.closeSheet=closeSheet;
 
 </script>
-</body>
-</html>
+
+
+</body></html>
